@@ -1,9 +1,11 @@
 /**
  * FlowForge — Product Setup Script
  *
- * Automatically discovers all workflow folders in your Supabase Storage
- * bucket, reads metadata + readme from each, creates Stripe products
+ * Reads workflow folders from your LOCAL disk, creates Stripe products
  * with payment links, and populates the Supabase `products` table.
+ *
+ * Downloads are served via Supabase Storage signed URLs — make sure
+ * your files are also uploaded to Supabase Storage (run upload-workflows.mjs).
  *
  * Run once (or re-run to add new workflows — already-set-up products are skipped):
  *   node setup-products.mjs
@@ -14,7 +16,7 @@
 
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -27,7 +29,7 @@ function loadEnv() {
     console.error('\n❌  .env not found. Fill in all keys.\n');
     process.exit(1);
   }
-  const raw = readFileSync(envPath, 'utf8').replace(/^\uFEFF/, ''); // strip BOM
+  const raw = readFileSync(envPath, 'utf8').replace(/^\uFEFF/, '');
   for (const line of raw.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
@@ -46,10 +48,20 @@ const SUPABASE_URL     = process.env.SUPABASE_URL;
 const SUPABASE_SVC_KEY = process.env.SUPABASE_SERVICE_KEY;
 const BUCKET_NAME      = process.env.SUPABASE_STORAGE_BUCKET;
 
+// Local path to the workflows folder
+const LOCAL_WORKFLOWS_DIR = join(__dir, 'workflows', 'n8nworkflows.xyz-main', 'workflows');
+// Matching path prefix inside the Supabase Storage bucket (for download signed URLs)
+const STORAGE_PREFIX = 'n8nworkflows.xyz-main/workflows';
+
 if (!STRIPE_KEY)       { console.error('❌  STRIPE_SECRET_KEY missing from .env'); process.exit(1); }
 if (!SUPABASE_URL)     { console.error('❌  SUPABASE_URL missing from .env');       process.exit(1); }
 if (!SUPABASE_SVC_KEY) { console.error('❌  SUPABASE_SERVICE_KEY missing from .env'); process.exit(1); }
 if (!BUCKET_NAME)      { console.error('❌  SUPABASE_STORAGE_BUCKET missing from .env'); process.exit(1); }
+
+if (!existsSync(LOCAL_WORKFLOWS_DIR)) {
+  console.error(`❌  Local workflows folder not found at:\n    ${LOCAL_WORKFLOWS_DIR}`);
+  process.exit(1);
+}
 
 // Optional --limit N flag
 const limitIdx = process.argv.indexOf('--limit');
@@ -62,7 +74,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SVC_KEY);
 
 function slugify(str) {
   return str
-    .replace(/[^\w\s-]/g, ' ')   // remove emoji and special chars
+    .replace(/[^\w\s-]/g, ' ')
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
@@ -72,22 +84,19 @@ function slugify(str) {
 }
 
 function workflowNameFromFolder(folderName) {
-  // Folder format: "Workflow Name-1234" — strip the trailing numeric ID
   return folderName.replace(/-\d+$/, '').trim();
 }
 
 function computePrice(nodeTypes) {
-  // Tier pricing based on workflow complexity (total node count)
   const total = Object.values(nodeTypes).reduce((s, v) => s + (v.count ?? v), 0);
-  if (total <= 5)  return 1499;   // $14.99 — simple
-  if (total <= 15) return 2499;   // $24.99 — standard
-  if (total <= 30) return 3499;   // $34.99 — advanced
-  return 4999;                     // $49.99 — complex
+  if (total <= 5)  return 1499;
+  if (total <= 15) return 2499;
+  if (total <= 30) return 3499;
+  return 4999;
 }
 
 function shortDescription(readme) {
   if (!readme) return '';
-  // Try to extract the Workflow Overview paragraph
   const match = readme.match(/###\s+1\.\s+Workflow Overview[\s\S]*?\n([\s\S]+?)(?:\n\n|\n-{3}|\n###)/);
   const raw = match
     ? match[1]
@@ -95,71 +104,37 @@ function shortDescription(readme) {
   return (raw || '').replace(/\n/g, ' ').trim().substring(0, 300);
 }
 
-// ── Supabase Storage helpers ──────────────────────────────────────────────────
+// ── Local disk discovery ──────────────────────────────────────────────────────
 
-async function listFolder(prefix) {
-  const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .list(prefix || undefined, { limit: 1000 });
-  if (error) { console.error(`  list error (${prefix}): ${error.message}`); return []; }
-  return data || [];
-}
-
-async function downloadText(path) {
-  const { data, error } = await supabase.storage.from(BUCKET_NAME).download(path);
-  if (error || !data) return null;
-  return await data.text();
-}
-
-// Recursively find all "workflow folders" (folders containing a metada-*.json file)
-async function findWorkflowFolders(prefix = '', depth = 0) {
-  if (depth > 6) return [];
-  const items = await listFolder(prefix);
-  const results = [];
-
-  for (const item of items) {
-    // Files have metadata.size; folders do not
-    const isFolder = !item.metadata?.size;
-    if (!isFolder) continue;
-
-    const path = prefix ? `${prefix}/${item.name}` : item.name;
-    const contents = await listFolder(path);
-    const hasMetadata = contents.some(
-      f => f.name.startsWith('metada-') && f.name.endsWith('.json')
-    );
-
-    if (hasMetadata) {
-      results.push({ folderPath: path, folderName: item.name, files: contents });
-    } else {
-      // Not a workflow folder — go one level deeper
-      const deeper = await findWorkflowFolders(path, depth + 1);
-      results.push(...deeper);
-    }
-  }
-  return results;
+function getWorkflowFolders() {
+  return readdirSync(LOCAL_WORKFLOWS_DIR).filter(name => {
+    const fullPath = join(LOCAL_WORKFLOWS_DIR, name);
+    return statSync(fullPath).isDirectory() && /-\d+$/.test(name);
+  });
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-console.log('\n🔧  FlowForge — Product Setup');
-console.log(`    Bucket  : ${BUCKET_NAME}`);
-console.log(`    Site URL: ${SITE_URL}`);
-if (LIMIT < Infinity) console.log(`    Limit   : ${LIMIT} workflows`);
-console.log('\n🔍  Scanning Supabase Storage for workflow folders...\n');
+console.log('\n🔧  FlowForge — Product Setup (reading from local disk)');
+console.log(`    Workflows : ${LOCAL_WORKFLOWS_DIR}`);
+console.log(`    Bucket    : ${BUCKET_NAME}`);
+console.log(`    Site URL  : ${SITE_URL}`);
+if (LIMIT < Infinity) console.log(`    Limit     : ${LIMIT} workflows`);
+console.log('\n🔍  Scanning local workflow folders...\n');
 
-const allFolders = await findWorkflowFolders();
+const allFolderNames = getWorkflowFolders();
 
-if (allFolders.length === 0) {
-  console.error('❌  No workflow folders found. Check SUPABASE_STORAGE_BUCKET in .env.');
+if (allFolderNames.length === 0) {
+  console.error('❌  No workflow folders found locally.');
   process.exit(1);
 }
 
-const folders = allFolders.slice(0, LIMIT === Infinity ? undefined : LIMIT);
-console.log(`    Found ${allFolders.length} workflow folders. Processing ${folders.length}.\n`);
+const folderNames = LIMIT < Infinity ? allFolderNames.slice(0, LIMIT) : allFolderNames;
+console.log(`    Found ${allFolderNames.length} workflow folders. Processing ${folderNames.length}.\n`);
 
 let created = 0, skipped = 0, failed = 0;
 
-for (const { folderPath, folderName, files } of folders) {
+for (const folderName of folderNames) {
   const name = workflowNameFromFolder(folderName);
   const slug = slugify(name);
   if (!slug) { skipped++; continue; }
@@ -180,10 +155,13 @@ for (const { folderPath, folderName, files } of folders) {
       continue;
     }
 
-    // Locate the relevant files in this folder
-    const metaFile     = files.find(f => f.name.startsWith('metada-') && f.name.endsWith('.json'));
-    const workflowFile = files.find(f => f.name.endsWith('.json') && !f.name.startsWith('metada-'));
-    const readmeFile   = files.find(f => f.name.endsWith('.md'));
+    // Read files from local disk
+    const folderPath  = join(LOCAL_WORKFLOWS_DIR, folderName);
+    const files       = readdirSync(folderPath);
+
+    const metaFile     = files.find(f => f.startsWith('metada-') && f.endsWith('.json'));
+    const workflowFile = files.find(f => f.endsWith('.json') && !f.startsWith('metada-'));
+    const readmeFile   = files.find(f => f.endsWith('.md'));
 
     if (!metaFile || !workflowFile) {
       console.log('⚠️   Skipped — missing metadata or workflow file');
@@ -191,26 +169,19 @@ for (const { folderPath, folderName, files } of folders) {
       continue;
     }
 
-    // Download metadata + readme in parallel
-    const [metaText, readmeText] = await Promise.all([
-      downloadText(`${folderPath}/${metaFile.name}`),
-      readmeFile ? downloadText(`${folderPath}/${readmeFile.name}`) : Promise.resolve(''),
-    ]);
-
-    if (!metaText) {
-      console.log('⚠️   Skipped — could not read metadata');
-      skipped++;
-      continue;
-    }
+    const metaText   = readFileSync(join(folderPath, metaFile),   'utf8');
+    const readmeText = readmeFile ? readFileSync(join(folderPath, readmeFile), 'utf8') : '';
 
     const meta      = JSON.parse(metaText);
     const nodeTypes = meta.nodeTypes  || {};
     const category  = meta.categories?.[0]?.name || 'Automation';
     const nodeNames = Object.keys(nodeTypes).map(k => k.split('.').pop());
     const price     = computePrice(nodeTypes);
-    const desc      = shortDescription(readmeText || '');
-    const longDesc  = (readmeText || desc).substring(0, 2000);
-    const filePath  = `${folderPath}/${workflowFile.name}`;
+    const desc      = shortDescription(readmeText);
+    const longDesc  = readmeText.substring(0, 2000) || desc;
+
+    // Supabase Storage path for this workflow's JSON file (used for signed URL downloads)
+    const filePath = `${STORAGE_PREFIX}/${folderName}/${workflowFile}`;
 
     // ── Create Stripe Product ─────────────────────────────────────────────────
     const stripeProduct = await stripe.products.create({
@@ -266,5 +237,6 @@ for (const { folderPath, folderName, files } of folders) {
 }
 
 console.log(`\n✨  Done!  Created: ${created}  |  Skipped: ${skipped}  |  Failed: ${failed}`);
-console.log('    Check your products: Supabase Dashboard → Table Editor → products');
-console.log('    Start the server:    node serve.mjs\n');
+console.log('    Check products: Supabase Dashboard → Table Editor → products');
+console.log('    Upload files:   node upload-workflows.mjs');
+console.log('    Start server:   node serve.mjs\n');
