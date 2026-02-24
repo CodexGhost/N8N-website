@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Loading… — FlowForge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { bg: { base:'#0D0D0D', elevated:'#141414', floating:'#1C1C1C', border:'#2A2A2A' }, primary:{ DEFAULT:'#FF5500', hover:'#FF6A20', dim:'#CC4400' }, accent:'#00D4C8', forge:{ text:'#F5F5F0', muted:'#9A9A90', faint:'#5C5C58' } }, fontFamily:{ display:['"Playfair Display"','Georgia','serif'], sans:['Inter','system-ui','sans-serif'] } } }
+    }
+  </script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    body{background:radial-gradient(ellipse 70% 40% at 5% 0%,rgba(255,85,0,0.08) 0%,transparent 55%),radial-gradient(ellipse 50% 35% at 95% 100%,rgba(0,212,200,0.05) 0%,transparent 50%),#0D0D0D;color:#F5F5F0;font-family:'Inter',system-ui,sans-serif}
+    body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0D0D0D}::-webkit-scrollbar-thumb{background:#2A2A2A;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#FF5500}
+    .btn-primary{display:inline-flex;align-items:center;gap:.5rem;padding:.875rem 2rem;background:#FF5500;color:#F5F5F0;font-family:'Inter',sans-serif;font-weight:600;font-size:1rem;border-radius:.5rem;border:1px solid rgba(255,106,32,.6);box-shadow:0 0 0 1px #FF5500,0 4px 24px rgba(255,85,0,.35),0 1px 4px rgba(0,0,0,.4);transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease,background .15s ease;text-decoration:none;cursor:pointer}
+    .btn-primary:hover{background:#FF6A20;transform:translateY(-2px);box-shadow:0 0 0 1px #FF6A20,0 6px 32px rgba(255,85,0,.5),0 1px 4px rgba(0,0,0,.4)}
+    .btn-primary:focus-visible{outline:2px solid #00D4C8;outline-offset:3px}
+    .btn-primary:active{background:#CC4400;transform:scale(.98)}
+    .btn-secondary{display:inline-flex;align-items:center;gap:.5rem;padding:.625rem 1.25rem;background:transparent;color:#9A9A90;font-family:'Inter',sans-serif;font-weight:500;font-size:.875rem;border-radius:.5rem;border:1px solid #2A2A2A;text-decoration:none;transition:color .15s ease,border-color .15s ease}
+    .btn-secondary:hover{color:#F5F5F0;border-color:#5C5C58}
+    .nav-link{color:#9A9A90;text-decoration:none;font-size:.9rem;font-weight:500;position:relative;transition:color .15s ease}
+    .nav-link::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:#FF5500;transition:width .2s ease}
+    .nav-link:hover{color:#F5F5F0}.nav-link:hover::after{width:100%}
+    .check-item{display:flex;align-items:flex-start;gap:.625rem;font-size:.875rem;color:#9A9A90;line-height:1.6}
+    .check-icon{flex-shrink:0;width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;margin-top:2px}
+    .feature-card{background:#141414;border:1px solid #2A2A2A;border-radius:.875rem;padding:1.5rem;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 4px 16px rgba(0,0,0,.4)}
+    .node-tag{display:inline-flex;align-items:center;padding:.25rem .75rem;background:rgba(255,85,0,.08);border:1px solid rgba(255,85,0,.2);border-radius:999px;font-size:.75rem;font-weight:500;color:#9A9A90}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .spinner{width:36px;height:36px;border:3px solid #2A2A2A;border-top-color:#FF5500;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .fade-up{animation:fadeUp .35s cubic-bezier(.34,1.56,.64,1) both}
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- NAV -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(28,28,28,.85);backdrop-filter:blur(12px);border-bottom:1px solid #2A2A2A">
+    <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px">
+      <a href="index.html" style="display:flex;align-items:center;gap:.625rem;text-decoration:none">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 2L6 10L10 12L4 20L20 13L15 11L22 2L14 2Z" fill="#FF5500"/></svg>
+        <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.25rem;color:#F5F5F0;letter-spacing:-.02em">FlowForge</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:2rem">
+        <a href="products.html" class="nav-link">Products</a>
+        <a href="index.html#how-it-works" class="nav-link">How It Works</a>
+        <a href="index.html#faq" class="nav-link">FAQ</a>
+      </div>
+      <a href="products.html" class="btn-secondary">Browse All</a>
+    </div>
+  </nav>
+
+  <!-- LOADING STATE -->
+  <div id="page-loading" style="padding:8rem 1.5rem;text-align:center">
+    <div class="spinner" style="margin-bottom:1.5rem"></div>
+    <p style="color:#5C5C58;font-size:.875rem">Loading product…</p>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div id="page-error" style="display:none;padding:8rem 1.5rem;text-align:center;max-width:480px;margin:0 auto">
+    <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:#F5F5F0;margin-bottom:1rem">Product not found</h1>
+    <p style="color:#9A9A90;margin-bottom:2rem">This workflow doesn't exist or is no longer available.</p>
+    <a href="products.html" class="btn-primary">Browse All Products</a>
+  </div>
+
+  <!-- PRODUCT CONTENT (rendered by JS) -->
+  <div id="page-content" style="display:none"></div>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+  (async function () {
+    const slug = new URLSearchParams(location.search).get('slug');
+    if (!slug) { showError(); return; }
+
+    // Get Supabase config from server
+    let sbUrl, sbAnon;
+    try {
+      const cfg = await fetch('/api/config').then(r => r.json());
+      sbUrl  = cfg.supabaseUrl;
+      sbAnon = cfg.supabaseAnonKey;
+    } catch { showError(); return; }
+
+    if (!sbUrl || !sbAnon) { showError(); return; }
+
+    // Fetch product from Supabase
+    const sb = supabase.createClient(sbUrl, sbAnon);
+    const { data: p, error } = await sb.from('products').select('*').eq('slug', slug).single();
+
+    if (error || !p) { showError(); return; }
+
+    renderProduct(p);
+  })();
+
+  function showError() {
+    document.getElementById('page-loading').style.display = 'none';
+    document.getElementById('page-error').style.display   = 'block';
+  }
+
+  function price(cents) {
+    return '$' + (cents / 100).toFixed(0);
+  }
+
+  function renderProduct(p) {
+    document.getElementById('page-title').textContent = `${p.name} — FlowForge`;
+
+    const nodeList = (p.node_types || []).slice(0, 8).map(n =>
+      `<span class="node-tag">${n}</span>`
+    ).join('');
+
+    const stripeHref = p.stripe_payment_link || '#';
+
+    document.getElementById('page-content').innerHTML = `
+      <!-- BREADCRUMB + HERO -->
+      <section style="padding:2rem 1.5rem 0" class="fade-up">
+        <div style="max-width:1200px;margin:0 auto">
+          <nav style="display:flex;align-items:center;gap:.5rem;font-size:.8125rem;color:#5C5C58;margin-bottom:2.5rem">
+            <a href="index.html" style="color:#5C5C58;text-decoration:none;transition:color .15s" onmouseover="this.style.color='#9A9A90'" onmouseout="this.style.color='#5C5C58'">Home</a>
+            <span>›</span>
+            <a href="products.html" style="color:#5C5C58;text-decoration:none;transition:color .15s" onmouseover="this.style.color='#9A9A90'" onmouseout="this.style.color='#5C5C58'">Products</a>
+            <span>›</span>
+            <span style="color:#9A9A90">${p.name}</span>
+          </nav>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start">
+            <!-- Left: info -->
+            <div>
+              <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem">
+                <span style="font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#00D4C8">${p.category || 'Automation'}</span>
+                <span style="width:4px;height:4px;border-radius:50%;background:#2A2A2A"></span>
+                <div style="display:flex;gap:.25rem">
+                  ${[1,2,3,4,5].map(() => '<svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1l1.545 3.13 3.455.502-2.5 2.436.59 3.442L7 8.885l-3.09 1.625.59-3.442L2 4.632l3.455-.502L7 1z"/></svg>').join('')}
+                  <span style="font-size:.8rem;color:#9A9A90;margin-left:.25rem">5.0</span>
+                </div>
+              </div>
+
+              <h1 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,4vw,2.5rem);font-weight:700;color:#F5F5F0;letter-spacing:-.03em;line-height:1.15;margin-bottom:1rem">${p.name}</h1>
+              <p style="font-size:1rem;color:#9A9A90;line-height:1.75;margin-bottom:1.75rem">${p.description}</p>
+
+              <!-- Price + CTA -->
+              <div style="background:#141414;border:1px solid #2A2A2A;border-radius:1rem;padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 4px 16px rgba(0,0,0,.4)">
+                <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:1.25rem">
+                  <span style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:#F5F5F0">${price(p.price)}</span>
+                  <span style="font-size:.875rem;color:#5C5C58">one-time · instant download</span>
+                </div>
+                <a href="${stripeHref}" class="btn-primary" style="width:100%;justify-content:center;font-size:1.0625rem;padding:1rem 2rem;margin-bottom:1rem">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v10M9 12l-3-3M9 12l3-3M2 15h14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Buy &amp; Download — ${price(p.price)}
+                </a>
+                <div style="display:flex;flex-direction:column;gap:.5rem">
+                  <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#5C5C58">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.2 2.43 2.68.39-1.94 1.89.46 2.67L7 7.23l-2.4 1.25.46-2.67-1.94-1.89 2.68-.39L7 1z" fill="#F59E0B"/></svg>
+                    Instant download after purchase
+                  </div>
+                  <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#5C5C58">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3 7-7" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Ready-to-import n8n workflow JSON
+                  </div>
+                  <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#5C5C58">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3 7-7" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Lifetime access · no subscription
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: image + node tags -->
+            <div>
+              <div style="position:relative;border-radius:1rem;overflow:hidden;border:1px solid #2A2A2A;margin-bottom:1.5rem">
+                <img src="https://placehold.co/600x380/141414/FF5500?text=Workflow+Preview" alt="${p.name}" style="width:100%;display:block;object-fit:cover">
+                <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6) 0%,transparent 60%)"></div>
+                <div style="position:absolute;inset:0;background:rgba(255,85,0,.04);mix-blend-mode:multiply"></div>
+              </div>
+              <div>
+                <p style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5C5C58;margin-bottom:.75rem">n8n Nodes Used</p>
+                <div style="display:flex;flex-wrap:wrap;gap:.5rem">${nodeList}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DESCRIPTION -->
+      <section style="padding:3rem 1.5rem" class="fade-up">
+        <div style="max-width:1200px;margin:0 auto">
+          <div style="max-width:720px">
+            <h2 style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;color:#F5F5F0;letter-spacing:-.03em;margin-bottom:1.25rem">About This Workflow</h2>
+            <p style="font-size:.9375rem;color:#9A9A90;line-height:1.8">${p.long_description || p.description}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- WHAT YOU GET -->
+      <section style="padding:0 1.5rem 3rem">
+        <div style="max-width:1200px;margin:0 auto">
+          <h2 style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;color:#F5F5F0;letter-spacing:-.03em;margin-bottom:2rem">What You Get</h2>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem">
+            ${[
+              ['Workflow JSON file','Import directly into n8n — zero setup friction'],
+              ['Node configuration','All nodes pre-configured and documented'],
+              ['Credential guide','Step-by-step on which API keys you need'],
+              ['Trigger setup','Configured for both manual and automated runs'],
+            ].map(([title, desc]) => `
+              <div class="feature-card">
+                <div style="width:36px;height:36px;border-radius:.5rem;background:rgba(255,85,0,.1);border:1px solid rgba(255,85,0,.2);display:flex;align-items:center;justify-content:center;margin-bottom:1rem">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#FF5500" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h3 style="font-size:.9375rem;font-weight:600;color:#F5F5F0;margin-bottom:.375rem">${title}</h3>
+                <p style="font-size:.8125rem;color:#9A9A90;line-height:1.6">${desc}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA FOOTER -->
+      <section style="padding:3rem 1.5rem 5rem">
+        <div style="max-width:640px;margin:0 auto;text-align:center;background:#141414;border:1px solid #2A2A2A;border-radius:1.25rem;padding:3rem 2rem;box-shadow:0 0 0 1px rgba(255,85,0,.08),0 24px 64px rgba(0,0,0,.5)">
+          <h2 style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;color:#F5F5F0;letter-spacing:-.03em;margin-bottom:.75rem">Ready to automate?</h2>
+          <p style="color:#9A9A90;font-size:.9375rem;line-height:1.7;margin-bottom:2rem">One purchase, instant download, works in your n8n today.</p>
+          <a href="${stripeHref}" class="btn-primary" style="font-size:1.0625rem;padding:1rem 2.5rem">
+            Get ${p.name} — ${price(p.price)}
+          </a>
+          <p style="margin-top:1rem;font-size:.8125rem;color:#5C5C58">Secure checkout via Stripe</p>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer style="border-top:1px solid #2A2A2A;padding:3rem 1.5rem">
+        <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+          <a href="index.html" style="display:flex;align-items:center;gap:.625rem;text-decoration:none">
+            <svg width="22" height="22" viewBox="0 0 28 28" fill="none"><path d="M14 2L6 10L10 12L4 20L20 13L15 11L22 2L14 2Z" fill="#FF5500"/></svg>
+            <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;color:#F5F5F0;letter-spacing:-.02em">FlowForge</span>
+          </a>
+          <span style="font-size:.8125rem;color:#5C5C58">© 2026 FlowForge. All rights reserved.</span>
+          <a href="products.html" style="font-size:.875rem;color:#9A9A90;text-decoration:none" onmouseover="this.style.color='#F5F5F0'" onmouseout="this.style.color='#9A9A90'">Browse All Products →</a>
+        </div>
+      </footer>
+    `;
+
+    document.getElementById('page-loading').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+  }
+  </script>
+
+</body>
+</html>

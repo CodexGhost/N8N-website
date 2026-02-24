@@ -3,4 +3,12 @@ temporary screenshots/
 .DS_Store
 Thumbs.db
 *.log
+
+# Secrets — never commit these
 .env
+
+# Workflow files live in Supabase Storage — no need to commit them
+workflows/
+
+# Claude Code memory/config
+.claude/

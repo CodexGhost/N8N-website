@@ -150,12 +150,8 @@
     <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem;">
       <!-- Category filters -->
       <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
-        <button class="filter-btn active" data-filter="all">All (8)</button>
-        <button class="filter-btn" data-filter="lead-gen">Lead Gen</button>
-        <button class="filter-btn" data-filter="email">Email</button>
-        <button class="filter-btn" data-filter="social">Social</button>
-        <button class="filter-btn" data-filter="data">Data</button>
-        <button class="filter-btn" data-filter="crm">CRM</button>
+        <button class="filter-btn active" data-filter="all" id="filter-all">All</button>
+        <span id="filter-btns-dynamic"></span>
       </div>
       <!-- Sort -->
       <div style="display:flex;align-items:center;gap:0.5rem;">
@@ -173,10 +169,18 @@
   <!-- PRODUCT GRID -->
   <main style="padding:2.5rem 1.5rem 5rem;">
     <div style="max-width:1200px;margin:0 auto;">
-      <div id="product-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;">
+      <!-- Loading state (shown while Supabase loads) -->
+      <div id="grid-loading" style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 1rem;gap:1rem">
+        <div style="width:36px;height:36px;border:3px solid #2A2A2A;border-top-color:#FF5500;border-radius:50%;animation:spin .8s linear infinite"></div>
+        <p style="color:#5C5C58;font-size:.875rem">Loading workflows…</p>
+      </div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
-        <!-- 1: Lead Generation -->
-        <a href="product-lead-gen.html" class="product-card card-visible card-transition" data-category="lead-gen" data-price="49" data-order="1">
+      <div id="product-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;display:none">
+
+        <!-- PLACEHOLDER: static cards below are replaced by Supabase-loaded content -->
+        <!-- Keep one card as a hidden template reference -->
+        <a href="product-lead-gen.html" class="product-card card-visible card-transition" data-category="lead-gen" data-price="49" data-order="1" style="display:none">
           <div style="position:relative;overflow:hidden;">
             <img src="https://placehold.co/600x280/141414/FF5500?text=Lead+Generation" alt="Lead Generation" style="width:100%;height:180px;object-fit:cover;display:block;">
             <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
@@ -388,44 +392,71 @@
     updateMobileToggle();
     window.addEventListener('resize', updateMobileToggle);
 
-    // Filter logic
-    const cards = Array.from(document.querySelectorAll('.product-card'));
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const emptyState = document.getElementById('empty-state');
+    // ── Supabase dynamic product loading ────────────────────────────────────────
+    let allProducts = [];
     let activeFilter = 'all';
-    let activeSort = 'popular';
+    let activeSort   = 'popular';
     let pendingTimeouts = [];
+
+    const grid       = document.getElementById('product-grid');
+    const gridLoader = document.getElementById('grid-loading');
+    const emptyState = document.getElementById('empty-state');
+
+    function price(cents) { return '$' + Math.round(cents / 100); }
+
+    function cardHTML(p, idx) {
+      const colors = ['#FF5500','#00D4C8','#FF8C42','#A855F7','#22C55E'];
+      const col = colors[idx % colors.length];
+      const cat = (p.category || 'Automation').split('/')[0].trim();
+      return `
+        <a href="product.html?slug=${encodeURIComponent(p.slug)}"
+           class="product-card card-visible card-transition"
+           data-category="${encodeURIComponent(cat.toLowerCase())}"
+           data-price="${Math.round(p.price / 100)}"
+           data-order="${idx + 1}"
+           style="opacity:0;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease">
+          <div style="position:relative;overflow:hidden">
+            <img src="https://placehold.co/600x280/141414/${col.slice(1)}?text=${encodeURIComponent(cat)}"
+                 alt="${p.name}" style="width:100%;height:180px;object-fit:cover;display:block">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%)"></div>
+            <span style="position:absolute;top:.75rem;left:.75rem;background:rgba(255,85,0,0.15);border:1px solid rgba(255,85,0,0.3);color:#FF5500;font-size:.6875rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.25rem .625rem;border-radius:999px">${cat}</span>
+          </div>
+          <div style="padding:1.125rem">
+            <div style="font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:.375rem">${p.category || 'Automation'}</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-.02em;margin-bottom:.5rem">${p.name}</h3>
+            <p style="font-size:.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:.875rem">${p.description}</p>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0">${price(p.price)}</span>
+              <span style="font-size:.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:.3rem">
+                View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </span>
+            </div>
+          </div>
+        </a>`;
+    }
 
     function applyFilter() {
       pendingTimeouts.forEach(t => clearTimeout(t));
       pendingTimeouts = [];
-      const visible = cards.filter(c => activeFilter === 'all' || c.dataset.category === activeFilter);
-      const hidden = cards.filter(c => activeFilter !== 'all' && c.dataset.category !== activeFilter);
+      const cards = Array.from(grid.querySelectorAll('.product-card:not([style*="display:none"]),.product-card:not([style*="display: none"])'));
+      const visible = cards.filter(c => activeFilter === 'all' || c.dataset.category === activeFilter.toLowerCase());
+      const hidden  = cards.filter(c => activeFilter !== 'all' && c.dataset.category !== activeFilter.toLowerCase());
 
-      // Sort visible
       const sorted = [...visible].sort((a, b) => {
-        if (activeSort === 'price-asc') return Number(a.dataset.price) - Number(b.dataset.price);
+        if (activeSort === 'price-asc')  return Number(a.dataset.price) - Number(b.dataset.price);
         if (activeSort === 'price-desc') return Number(b.dataset.price) - Number(a.dataset.price);
-        if (activeSort === 'newest') return Number(b.dataset.order) - Number(a.dataset.order);
-        return Number(a.dataset.order) - Number(b.dataset.order); // popular = original order
+        if (activeSort === 'newest')     return Number(b.dataset.order) - Number(a.dataset.order);
+        return Number(a.dataset.order) - Number(b.dataset.order);
       });
 
-      // Hide filtered-out cards
       hidden.forEach(c => {
-        c.style.opacity = '0';
-        c.style.transform = 'translateY(8px)';
+        c.style.opacity = '0'; c.style.transform = 'translateY(8px)';
         const t = setTimeout(() => { c.style.display = 'none'; }, 200);
         pendingTimeouts.push(t);
       });
-
-      // Show & reorder visible cards
-      const grid = document.getElementById('product-grid');
       sorted.forEach((c, i) => {
         c.style.display = 'block';
-        const t = setTimeout(() => {
-          c.style.opacity = '1';
-          c.style.transform = 'translateY(0)';
-        }, i * 40);
+        const t = setTimeout(() => { c.style.opacity = '1'; c.style.transform = 'translateY(0)'; }, i * 40);
         pendingTimeouts.push(t);
         grid.appendChild(c);
       });
@@ -433,14 +464,64 @@
       emptyState.style.display = visible.length === 0 ? 'block' : 'none';
     }
 
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        filterBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeFilter = btn.dataset.filter;
-        applyFilter();
+    function setupFilters(products) {
+      // Build unique category list
+      const cats = [...new Set(products.map(p => (p.category || 'Automation').split('/')[0].trim()))];
+      const dynSpan = document.getElementById('filter-btns-dynamic');
+      dynSpan.innerHTML = cats.map(cat => `
+        <button class="filter-btn" data-filter="${cat.toLowerCase()}">${cat}</button>
+      `).join('');
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeFilter = btn.dataset.filter;
+          applyFilter();
+        });
       });
-    });
+    }
+
+    async function loadProducts() {
+      try {
+        const cfg = await fetch('/api/config').then(r => r.json());
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) throw new Error('No Supabase config');
+
+        // Use Supabase REST API directly (no CDN needed on this page)
+        const res = await fetch(
+          `${cfg.supabaseUrl}/rest/v1/products?active=eq.true&select=*&order=created_at.asc`,
+          { headers: { apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${cfg.supabaseAnonKey}` } }
+        );
+        const products = await res.json();
+        if (!Array.isArray(products)) throw new Error('Bad response');
+
+        allProducts = products;
+
+        // Render cards
+        grid.innerHTML = '';
+        products.forEach((p, i) => { grid.insertAdjacentHTML('beforeend', cardHTML(p, i)); });
+
+        // Show grid, hide loader
+        gridLoader.style.display = 'none';
+        grid.style.display = 'grid';
+
+        // Fade cards in staggered
+        Array.from(grid.querySelectorAll('.product-card')).forEach((c, i) => {
+          setTimeout(() => { c.style.opacity = '1'; c.style.transform = 'translateY(0)'; }, i * 60);
+        });
+
+        setupFilters(products);
+
+        // Update filter "All" button count
+        document.getElementById('filter-all').textContent = `All (${products.length})`;
+
+      } catch (err) {
+        console.error('Failed to load products:', err);
+        gridLoader.innerHTML = '<p style="color:#9A9A90;font-size:.875rem;text-align:center;padding:4rem 0">Could not load products. Make sure the server is running with Supabase configured.</p>';
+      }
+    }
+
+    loadProducts();
 
     document.getElementById('sort-select').addEventListener('change', (e) => {
       activeSort = e.target.value;
@@ -449,10 +530,13 @@
 
     // Handle URL param ?cat=
     const urlParams = new URLSearchParams(window.location.search);
-    const catParam = urlParams.get('cat');
+    const catParam  = urlParams.get('cat');
     if (catParam) {
-      const targetBtn = document.querySelector(`[data-filter="${catParam}"]`);
-      if (targetBtn) { targetBtn.click(); }
+      // Applied after products load
+      document.addEventListener('productsLoaded', () => {
+        const targetBtn = document.querySelector(`[data-filter="${catParam}"]`);
+        if (targetBtn) targetBtn.click();
+      });
     }
   </script>
 </body>

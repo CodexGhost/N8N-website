@@ -1,0 +1,13 @@
+{
+  "name": "flowforge",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "setup": "node setup-products.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "stripe": "^16.0.0"
+  }
+}

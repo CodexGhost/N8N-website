@@ -1,0 +1,108 @@
+{
+  "products": [
+    {
+      "slug": "lead-gen",
+      "name": "AI Lead Generation Machine",
+      "description": "AI-powered lead generation system with email personalization and LinkedIn integration. Automatically finds, qualifies, and reaches out to prospects.",
+      "price": 4900,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/AI-Powered Lead Generation System with Email Personalization and LinkedIn-6027/ai-powered_lead_generation_system_with_email_personalization_and_linkedin.json",
+      "htmlPage": "product-lead-gen.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    },
+    {
+      "slug": "email-sequence",
+      "name": "AI Email Sequence Builder",
+      "description": "Human-in-the-loop email response system using AI and IMAP. Drafts personalized replies for your review before sending — perfect email sequences at scale.",
+      "price": 3900,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/A Very Simple _Human in the Loop_ Email Response System Using AI and IMAP-2907/a_very_simple_human_in_the_loop_email_response_system_using_ai_and_imap.json",
+      "htmlPage": "product-email-sequence.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    },
+    {
+      "slug": "social-scheduler",
+      "name": "Multi-Platform Social Scheduler",
+      "description": "Automates multi-platform social media content creation and publishing with AI. Schedule, generate, and post content across all your channels automatically.",
+      "price": 2900,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/✨🤖Automate Multi-Platform Social Media Content Creation with AI-3066/_automate_multi-platform_social_media_content_creation_with_ai.json",
+      "htmlPage": "product-social-scheduler.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    },
+    {
+      "slug": "crm-sync",
+      "name": "CRM Data Sync Engine",
+      "description": "Two-way sync between Google Contacts and Notion. Keep your CRM data consistent across platforms with zero manual effort.",
+      "price": 5900,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/2-way Sync Google Contacts and Notion-2814/2-way_sync_google_contacts_and_notion.json",
+      "htmlPage": "product-crm-sync.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    },
+    {
+      "slug": "invoice-generator",
+      "name": "AI Invoice Generator",
+      "description": "Automated invoice agent that generates, fills, and sends professional invoices with dynamic currency rates and Google Sheets integration.",
+      "price": 3400,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/AI Invoice Agent-7905/ai_invoice_agent.json",
+      "htmlPage": "product-invoice-generator.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    },
+    {
+      "slug": "webhook-router",
+      "name": "Webhook Routing Hub",
+      "description": "Full REST API built with n8n webhooks. Route, filter, transform, and forward webhook payloads across any services with conditional logic.",
+      "price": 2400,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/Build a full REST-API with n8n webhooks-12789/build_a_full_rest-api_with_n8n_webhooks.json",
+      "htmlPage": "product-webhook-router.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    },
+    {
+      "slug": "linkedin-outreach",
+      "name": "LinkedIn Outreach Automator",
+      "description": "Precision LinkedIn prospecting with Bright Data integration. Automatically find, qualify, and reach out to ideal prospects at scale.",
+      "price": 6900,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/🎯 Precision Prospecting_ Automate LinkedIn Lead Gen with Bright Data-4873/_precision_prospecting_automate_linkedin_lead_gen_with_bright_data.json",
+      "htmlPage": "product-linkedin-outreach.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    },
+    {
+      "slug": "newsletter-builder",
+      "name": "AI Newsletter Builder",
+      "description": "AI-powered newsletter generation with Gmail and GPT-4o. Automatically curates content, writes copy, and sends polished newsletters on schedule.",
+      "price": 4400,
+      "currency": "usd",
+      "file": "workflows/n8nworkflows.xyz-main/workflows/🗞️ AI-Powered Sustainability Newsletter for Marketing with Gmail, GPT-4o-3684/_ai-powered_sustainability_newsletter_for_marketing_with_gmail_gpt-4o.json",
+      "htmlPage": "product-newsletter-builder.html",
+      "stripeProductId": null,
+      "stripePriceId": null,
+      "stripePaymentLinkId": null,
+      "stripePaymentLink": null
+    }
+  ]
+}
