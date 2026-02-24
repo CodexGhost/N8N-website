@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowForge — Done-for-you n8n Automation Workflows</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: {
+              base: '#0D0D0D',
+              elevated: '#141414',
+              floating: '#1C1C1C',
+              border: '#2A2A2A',
+            },
+            primary: {
+              DEFAULT: '#FF5500',
+              hover: '#FF6A20',
+              dim: '#CC4400',
+            },
+            accent: '#00D4C8',
+            forge: {
+              text: '#F5F5F0',
+              muted: '#9A9A90',
+              faint: '#5C5C58',
+            }
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      background:
+        radial-gradient(ellipse 80% 50% at 10% 0%, rgba(255,85,0,0.09) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(0,212,200,0.07) 0%, transparent 50%),
+        #0D0D0D;
+      color: #F5F5F0;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0D0D0D; }
+    ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #FF5500; }
+
+    /* Buttons */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      background: #FF5500;
+      color: #F5F5F0;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255, 106, 32, 0.6);
+      box-shadow: 0 0 0 1px #FF5500, 0 4px 24px rgba(255,85,0,0.35), 0 1px 4px rgba(0,0,0,0.4);
+      transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease, background 0.15s ease;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-primary:hover {
+      background: #FF6A20;
+      box-shadow: 0 0 0 1px #FF6A20, 0 6px 32px rgba(255,85,0,0.5), 0 1px 4px rgba(0,0,0,0.4);
+      transform: translateY(-2px);
+    }
+    .btn-primary:focus-visible {
+      outline: 2px solid #00D4C8;
+      outline-offset: 3px;
+    }
+    .btn-primary:active {
+      background: #CC4400;
+      transform: translateY(0px) scale(0.98);
+      box-shadow: 0 0 0 1px #CC4400, 0 2px 12px rgba(255,85,0,0.3);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      background: transparent;
+      color: #F5F5F0;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      border-radius: 0.5rem;
+      border: 1px solid #2A2A2A;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease, border-color 0.15s ease;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-secondary:hover {
+      border-color: #FF5500;
+      box-shadow: 0 0 0 1px rgba(255,85,0,0.3), 0 4px 16px rgba(0,0,0,0.4);
+      transform: translateY(-2px);
+    }
+    .btn-secondary:focus-visible {
+      outline: 2px solid #00D4C8;
+      outline-offset: 3px;
+    }
+    .btn-secondary:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    /* Nav link */
+    .nav-link {
+      color: #9A9A90;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      position: relative;
+      transition: color 0.15s ease;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #FF5500;
+      transition: width 0.2s ease;
+    }
+    .nav-link:hover { color: #F5F5F0; }
+    .nav-link:hover::after { width: 100%; }
+
+    /* Product cards */
+    .product-card {
+      background: #141414;
+      border: 1px solid #2A2A2A;
+      border-radius: 1rem;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 1px 0 0 rgba(255,255,255,0.04) inset, 0 4px 16px -4px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4);
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255,85,0,0.3);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,85,0,0.2), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .product-card:focus-visible {
+      outline: 2px solid #00D4C8;
+      outline-offset: 2px;
+    }
+
+    /* Category cards */
+    .cat-card {
+      background: #141414;
+      border: 1px solid #2A2A2A;
+      border-radius: 0.75rem;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .cat-card:hover {
+      border-color: rgba(255,85,0,0.4);
+      box-shadow: 0 0 20px rgba(255,85,0,0.12), 0 4px 16px rgba(0,0,0,0.4);
+      transform: translateY(-3px);
+    }
+    .cat-card:focus-visible {
+      outline: 2px solid #00D4C8;
+      outline-offset: 2px;
+    }
+
+    /* FAQ */
+    .faq-content {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease;
+    }
+    .faq-trigger {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 0;
+      text-align: left;
+      background: none;
+      border: none;
+      color: #F5F5F0;
+      cursor: pointer;
+    }
+    .faq-trigger:focus-visible {
+      outline: 2px solid #00D4C8;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .faq-chevron {
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+      color: #9A9A90;
+    }
+
+    /* Animated badge pulse */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #00D4C8;
+      border-radius: 50%;
+      animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+
+    /* Float animation for hero graphic */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+    }
+    .float-anim {
+      animation: float 5s ease-in-out infinite;
+    }
+
+    /* Scroll fade-in */
+    [data-animate] {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    [data-animate].visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Step connector */
+    .step-connector {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, #2A2A2A, rgba(255,85,0,0.4), #2A2A2A);
+    }
+
+    /* Testimonial card */
+    .testimonial-card {
+      background: #141414;
+      border: 1px solid #2A2A2A;
+      border-radius: 1rem;
+      padding: 1.75rem;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 4px 16px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- NAV -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(28,28,28,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #2A2A2A;">
+    <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <!-- Logo -->
+      <a href="index.html" style="display:flex;align-items:center;gap:0.625rem;text-decoration:none;" aria-label="FlowForge Home">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2L6 10L10 12L4 20L20 13L15 11L22 2L14 2Z" fill="#FF5500"/>
+          <path d="M14 2L22 2L15 11L20 13L4 20L10 12L6 10L14 2Z" fill="url(#grad1)" opacity="0.4"/>
+          <defs>
+            <linearGradient id="grad1" x1="4" y1="2" x2="22" y2="20" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF5500"/>
+              <stop offset="1" stop-color="#00D4C8"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.25rem;color:#F5F5F0;letter-spacing:-0.02em;">FlowForge</span>
+      </a>
+
+      <!-- Desktop nav links -->
+      <div style="display:flex;align-items:center;gap:2rem;" class="hidden md:flex">
+        <a href="products.html" class="nav-link">Products</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#faq" class="nav-link">FAQ</a>
+      </div>
+
+      <!-- CTA + Mobile toggle -->
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <a href="products.html" class="btn-primary hidden md:inline-flex" style="padding:0.5rem 1.25rem;font-size:0.875rem;">
+          Browse Automations
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7H11M8 4L11 7L8 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <button id="mobile-toggle" aria-label="Toggle menu" style="display:none;background:none;border:none;color:#F5F5F0;cursor:pointer;padding:4px;" class="md:hidden">
+          <svg id="icon-menu" width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 6H19M3 11H19M3 16H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg id="icon-close" width="22" height="22" viewBox="0 0 22 22" fill="none" style="display:none;"><path d="M5 5L17 17M17 5L5 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Mobile menu -->
+    <div id="mobile-menu" style="display:none;padding:1rem 1.5rem 1.5rem;border-top:1px solid #2A2A2A;">
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <a href="products.html" class="nav-link" style="font-size:1rem;">Products</a>
+        <a href="#how-it-works" class="nav-link" style="font-size:1rem;">How It Works</a>
+        <a href="#faq" class="nav-link" style="font-size:1rem;">FAQ</a>
+        <a href="products.html" class="btn-primary" style="justify-content:center;margin-top:0.5rem;">Browse Automations</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section style="position:relative;min-height:90vh;display:flex;align-items:center;overflow:hidden;padding:5rem 1.5rem;">
+    <!-- Radial glow -->
+    <div style="position:absolute;top:-100px;left:-100px;width:600px;height:600px;background:radial-gradient(circle,rgba(255,85,0,0.12) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="position:absolute;bottom:-80px;right:-80px;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,200,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+
+    <div style="max-width:1200px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr;gap:4rem;align-items:center;" class="lg:grid-cols-2">
+      <!-- Left: content -->
+      <div>
+        <!-- Animated badge -->
+        <div data-animate style="display:inline-flex;align-items:center;gap:0.5rem;background:#141414;border:1px solid #2A2A2A;border-radius:999px;padding:0.35rem 0.875rem;margin-bottom:1.75rem;font-size:0.8125rem;color:#9A9A90;">
+          <span class="pulse-dot"></span>
+          NEW · 12 automations added this month
+        </div>
+
+        <h1 data-animate style="font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(2.5rem,6vw,4.5rem);line-height:1.08;letter-spacing:-0.04em;color:#F5F5F0;margin-bottom:1.5rem;">
+          Automate Your Business with Expert
+          <span style="display:block;background:linear-gradient(135deg,#FF5500,#FF8C42);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">n8n Workflows</span>
+        </h1>
+
+        <p data-animate style="font-size:1.125rem;line-height:1.75;color:#9A9A90;max-width:520px;margin-bottom:2.25rem;">
+          FlowForge delivers battle-tested automation blueprints that plug straight into your n8n instance. Buy once, deploy in minutes, save hours every week.
+        </p>
+
+        <div data-animate style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;">
+          <a href="products.html" class="btn-primary" style="font-size:1rem;padding:0.875rem 2rem;">
+            Browse Automations
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M9 4L13 8L9 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="#how-it-works" class="btn-secondary" style="font-size:1rem;padding:0.875rem 2rem;">
+            How It Works
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3V13M4 9L8 13L12 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+
+        <!-- Trust micro-badges -->
+        <div data-animate style="display:flex;flex-wrap:wrap;gap:1.25rem;margin-top:2.5rem;">
+          <span style="display:flex;align-items:center;gap:0.375rem;font-size:0.8125rem;color:#5C5C58;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z" fill="#F59E0B"/></svg>
+            4.9 avg rating
+          </span>
+          <span style="display:flex;align-items:center;gap:0.375rem;font-size:0.8125rem;color:#5C5C58;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1C3.7 1 1 3.7 1 7s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2L9 7H7V3z" fill="#22C55E"/></svg>
+            Instant download
+          </span>
+          <span style="display:flex;align-items:center;gap:0.375rem;font-size:0.8125rem;color:#5C5C58;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7L5.5 10.5L12 3" stroke="#22C55E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Free updates included
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Hero graphic -->
+      <div class="float-anim" style="display:flex;justify-content:center;align-items:center;" aria-hidden="true">
+        <div style="position:relative;width:100%;max-width:480px;">
+          <!-- Workflow card mockup -->
+          <div style="background:#141414;border:1px solid #2A2A2A;border-radius:1.25rem;padding:1.5rem;box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04) inset;">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.25rem;">
+              <div style="width:10px;height:10px;border-radius:50%;background:#FF5D5B;"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#FFBE2E;"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#28C840;"></div>
+              <span style="margin-left:0.5rem;font-size:0.75rem;color:#5C5C58;">n8n workflow</span>
+            </div>
+            <!-- Node mockup -->
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+              <div style="display:flex;align-items:center;gap:1rem;">
+                <div style="background:#1C1C1C;border:1px solid #2A2A2A;border-radius:0.5rem;padding:0.5rem 0.875rem;font-size:0.75rem;color:#9A9A90;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#FF5500;display:inline-block;"></span>
+                  Webhook Trigger
+                </div>
+                <div style="flex:1;height:1px;background:#2A2A2A;"></div>
+                <div style="background:#1C1C1C;border:1px solid #2A2A2A;border-radius:0.5rem;padding:0.5rem 0.875rem;font-size:0.75rem;color:#9A9A90;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#00D4C8;display:inline-block;"></span>
+                  Filter Node
+                </div>
+              </div>
+              <div style="display:flex;justify-content:center;">
+                <div style="width:1px;height:24px;background:#2A2A2A;"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:1rem;">
+                <div style="background:#1C1C1C;border:1px solid rgba(255,85,0,0.3);border-radius:0.5rem;padding:0.5rem 0.875rem;font-size:0.75rem;color:#FF5500;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;box-shadow:0 0 12px rgba(255,85,0,0.15);">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#FF5500;display:inline-block;"></span>
+                  CRM Update
+                </div>
+                <div style="flex:1;height:1px;background:#2A2A2A;"></div>
+                <div style="background:#1C1C1C;border:1px solid #2A2A2A;border-radius:0.5rem;padding:0.5rem 0.875rem;font-size:0.75rem;color:#9A9A90;display:flex;align-items:center;gap:0.5rem;white-space:nowrap;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#22C55E;display:inline-block;"></span>
+                  Send Email
+                </div>
+              </div>
+              <div style="display:flex;justify-content:center;">
+                <div style="width:1px;height:24px;background:#2A2A2A;"></div>
+              </div>
+              <div style="display:flex;justify-content:center;">
+                <div style="background:linear-gradient(135deg,rgba(255,85,0,0.15),rgba(0,212,200,0.1));border:1px solid rgba(255,85,0,0.25);border-radius:0.5rem;padding:0.5rem 1.5rem;font-size:0.75rem;color:#F5F5F0;display:flex;align-items:center;gap:0.5rem;">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Automation Complete
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Floating accent badge -->
+          <div style="position:absolute;top:-16px;right:-16px;background:#141414;border:1px solid rgba(0,212,200,0.3);border-radius:0.75rem;padding:0.625rem 0.875rem;box-shadow:0 0 20px rgba(0,212,200,0.15),0 4px 16px rgba(0,0,0,0.5);">
+            <div style="font-size:0.75rem;color:#00D4C8;font-weight:600;">8 automations</div>
+            <div style="font-size:0.6875rem;color:#5C5C58;margin-top:1px;">ready to deploy</div>
+          </div>
+          <!-- Time saved badge -->
+          <div style="position:absolute;bottom:-16px;left:-16px;background:#141414;border:1px solid rgba(255,85,0,0.25);border-radius:0.75rem;padding:0.625rem 0.875rem;box-shadow:0 0 20px rgba(255,85,0,0.1),0 4px 16px rgba(0,0,0,0.5);">
+            <div style="font-size:0.75rem;color:#FF5500;font-weight:600;">10+ hrs/week</div>
+            <div style="font-size:0.6875rem;color:#5C5C58;margin-top:1px;">saved on avg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF BAR -->
+  <section style="border-top:1px solid #2A2A2A;border-bottom:1px solid #2A2A2A;background:rgba(20,20,20,0.6);">
+    <div style="max-width:900px;margin:0 auto;padding:2rem 1.5rem;display:flex;flex-wrap:wrap;justify-content:center;gap:0;" data-animate>
+      <div style="flex:1;min-width:200px;text-align:center;padding:1rem 2rem;">
+        <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:#F5F5F0;letter-spacing:-0.03em;">500+</div>
+        <div style="font-size:0.875rem;color:#5C5C58;margin-top:0.25rem;">Happy Customers</div>
+      </div>
+      <div style="width:1px;background:#2A2A2A;align-self:stretch;"></div>
+      <div style="flex:1;min-width:200px;text-align:center;padding:1rem 2rem;">
+        <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:#F5F5F0;letter-spacing:-0.03em;">$2M+</div>
+        <div style="font-size:0.875rem;color:#5C5C58;margin-top:0.25rem;">Saved in Labor Costs</div>
+      </div>
+      <div style="width:1px;background:#2A2A2A;align-self:stretch;"></div>
+      <div style="flex:1;min-width:200px;text-align:center;padding:1rem 2rem;">
+        <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:#F5F5F0;letter-spacing:-0.03em;">4.9★</div>
+        <div style="font-size:0.875rem;color:#5C5C58;margin-top:0.25rem;">Average Rating</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED AUTOMATIONS -->
+  <section style="padding:6rem 1.5rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div data-animate style="margin-bottom:3rem;">
+        <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.75rem;">Featured Workflows</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;letter-spacing:-0.03em;color:#F5F5F0;">Our Most Popular Automations</h2>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-bottom:2.5rem;">
+        <!-- Card 1: Lead Gen -->
+        <a href="product-lead-gen.html" class="product-card" data-animate>
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x300/141414/FF5500?text=Lead+Generation" alt="Lead Generation Automation" style="width:100%;height:200px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 60%);"></div>
+            <div style="position:absolute;inset:0;background:rgba(255,85,0,0.06);mix-blend-mode:multiply;"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(255,85,0,0.15);border:1px solid rgba(255,85,0,0.3);color:#FF5500;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Lead Gen</span>
+            <span style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(0,0,0,0.6);color:#F59E0B;font-size:0.6875rem;font-weight:600;padding:0.25rem 0.625rem;border-radius:999px;">Most Popular</span>
+          </div>
+          <div style="padding:1.25rem;">
+            <div style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Lead Generation</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Lead Generation Automation</h3>
+            <p style="font-size:0.875rem;color:#9A9A90;line-height:1.6;margin-bottom:1rem;">Automatically capture, qualify, and route leads from any source to your CRM — 24/7 without lifting a finger.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#F5F5F0;">$49</span>
+              <span style="display:inline-flex;align-items:center;gap:0.375rem;font-size:0.8125rem;font-weight:600;color:#FF5500;">
+                View Details
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6H10M7 3L10 6L7 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 2: Email Sequence -->
+        <a href="product-email-sequence.html" class="product-card" data-animate>
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x300/141414/00D4C8?text=Email+Sequence" alt="Email Sequence Automation" style="width:100%;height:200px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 60%);"></div>
+            <div style="position:absolute;inset:0;background:rgba(0,212,200,0.05);mix-blend-mode:multiply;"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(0,212,200,0.12);border:1px solid rgba(0,212,200,0.25);color:#00D4C8;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Email</span>
+          </div>
+          <div style="padding:1.25rem;">
+            <div style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Email Marketing</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Email Sequence Automation</h3>
+            <p style="font-size:0.875rem;color:#9A9A90;line-height:1.6;margin-bottom:1rem;">Send perfectly-timed nurture sequences triggered by user actions. Fully personalized, zero manual work.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#F5F5F0;">$39</span>
+              <span style="display:inline-flex;align-items:center;gap:0.375rem;font-size:0.8125rem;font-weight:600;color:#FF5500;">
+                View Details
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6H10M7 3L10 6L7 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 3: Social Scheduler -->
+        <a href="product-social-scheduler.html" class="product-card" data-animate>
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x300/141414/FF8C42?text=Social+Scheduler" alt="Social Media Scheduler" style="width:100%;height:200px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 60%);"></div>
+            <div style="position:absolute;inset:0;background:rgba(255,140,66,0.05);mix-blend-mode:multiply;"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(255,85,0,0.12);border:1px solid rgba(255,85,0,0.25);color:#FF8C42;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Social</span>
+          </div>
+          <div style="padding:1.25rem;">
+            <div style="font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Social Media</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Social Media Scheduler</h3>
+            <p style="font-size:0.875rem;color:#9A9A90;line-height:1.6;margin-bottom:1rem;">Schedule and cross-post content across all your platforms from a single spreadsheet — automatically.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#F5F5F0;">$29</span>
+              <span style="display:inline-flex;align-items:center;gap:0.375rem;font-size:0.8125rem;font-weight:600;color:#FF5500;">
+                View Details
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6H10M7 3L10 6L7 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div data-animate style="text-align:center;">
+        <a href="products.html" class="btn-secondary">
+          View All Automations
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7H11M8 4L11 7L8 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section style="padding:0 1.5rem 6rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div data-animate style="margin-bottom:3rem;text-align:center;">
+        <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.75rem;">Categories</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;letter-spacing:-0.03em;color:#F5F5F0;">Browse by Category</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;" data-animate>
+        <a href="products.html?cat=lead-gen" class="cat-card">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="10" r="5" stroke="#FF5500" stroke-width="1.8"/><path d="M4 24c0-5.5 4.5-10 10-10s10 4.5 10 10" stroke="#FF5500" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span style="font-weight:600;font-size:0.9375rem;color:#F5F5F0;">Lead Gen</span>
+          <span style="font-size:0.75rem;color:#5C5C58;">2 workflows</span>
+        </a>
+        <a href="products.html?cat=email" class="cat-card">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="3" y="6" width="22" height="16" rx="2" stroke="#00D4C8" stroke-width="1.8"/><path d="M3 10L14 17L25 10" stroke="#00D4C8" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span style="font-weight:600;font-size:0.9375rem;color:#F5F5F0;">Email</span>
+          <span style="font-size:0.75rem;color:#5C5C58;">2 workflows</span>
+        </a>
+        <a href="products.html?cat=social" class="cat-card">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="8" cy="14" r="3" stroke="#FF8C42" stroke-width="1.8"/><circle cx="20" cy="8" r="3" stroke="#FF8C42" stroke-width="1.8"/><circle cx="20" cy="20" r="3" stroke="#FF8C42" stroke-width="1.8"/><path d="M11 13L17 9M11 15L17 19" stroke="#FF8C42" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span style="font-weight:600;font-size:0.9375rem;color:#F5F5F0;">Social Media</span>
+          <span style="font-size:0.75rem;color:#5C5C58;">1 workflow</span>
+        </a>
+        <a href="products.html?cat=data" class="cat-card">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="4" y="4" width="20" height="6" rx="1.5" stroke="#22C55E" stroke-width="1.8"/><rect x="4" y="14" width="20" height="6" rx="1.5" stroke="#22C55E" stroke-width="1.8"/><circle cx="9" cy="7" r="1.5" fill="#22C55E"/><circle cx="9" cy="17" r="1.5" fill="#22C55E"/></svg>
+          <span style="font-weight:600;font-size:0.9375rem;color:#F5F5F0;">Data Sync</span>
+          <span style="font-size:0.75rem;color:#5C5C58;">2 workflows</span>
+        </a>
+        <a href="products.html?cat=crm" class="cat-card">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="4" y="8" width="20" height="14" rx="2" stroke="#F59E0B" stroke-width="1.8"/><path d="M9 8V6a5 5 0 0110 0v2" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span style="font-weight:600;font-size:0.9375rem;color:#F5F5F0;">CRM</span>
+          <span style="font-size:0.75rem;color:#5C5C58;">1 workflow</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" style="padding:6rem 1.5rem;background:rgba(20,20,20,0.5);border-top:1px solid #2A2A2A;border-bottom:1px solid #2A2A2A;">
+    <div style="max-width:1000px;margin:0 auto;">
+      <div data-animate style="text-align:center;margin-bottom:4rem;">
+        <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.75rem;">Simple Process</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;letter-spacing:-0.03em;color:#F5F5F0;">Up and Running in Minutes</h2>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap;" data-animate>
+        <!-- Step 1 -->
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;align-items:center;text-align:center;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,85,0,0.1);border:1px solid rgba(255,85,0,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;box-shadow:0 0 20px rgba(255,85,0,0.15);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 3h18v2H3V3zm0 8h18v2H3v-2zm0 8h18v2H3v-2z" fill="#FF5500"/><path d="M6 8l3-3 3 3M9 5v14" stroke="#FF5500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div style="font-size:0.6875rem;color:#5C5C58;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.5rem;">Step 01</div>
+          <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;margin-bottom:0.5rem;">Pick & Purchase</h3>
+          <p style="font-size:0.875rem;color:#9A9A90;line-height:1.65;">Browse the catalog, choose the workflow you need, and complete your secure Stripe checkout in seconds.</p>
+        </div>
+        <div class="step-connector" style="align-self:center;min-width:40px;margin-top:-40px;"></div>
+        <!-- Step 2 -->
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;align-items:center;text-align:center;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(0,212,200,0.1);border:1px solid rgba(0,212,200,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;box-shadow:0 0 20px rgba(0,212,200,0.12);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3v12M8 11l4 4 4-4" stroke="#00D4C8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2" stroke="#00D4C8" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div style="font-size:0.6875rem;color:#5C5C58;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.5rem;">Step 02</div>
+          <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;margin-bottom:0.5rem;">Import to n8n</h3>
+          <p style="font-size:0.875rem;color:#9A9A90;line-height:1.65;">Download the workflow JSON file and import it directly into your n8n instance with one click. No coding required.</p>
+        </div>
+        <div class="step-connector" style="align-self:center;min-width:40px;margin-top:-40px;"></div>
+        <!-- Step 3 -->
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;align-items:center;text-align:center;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;box-shadow:0 0 20px rgba(34,197,94,0.12);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill="#22C55E" opacity="0.2"/><path d="M5 3l14 9-14 9V3z" stroke="#22C55E" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
+          <div style="font-size:0.6875rem;color:#5C5C58;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.5rem;">Step 03</div>
+          <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;margin-bottom:0.5rem;">Activate & Relax</h3>
+          <p style="font-size:0.875rem;color:#9A9A90;line-height:1.65;">Flip the switch, configure your credentials, and let the automation run. Your workflow is live and saving you time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section style="padding:6rem 1.5rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div data-animate style="text-align:center;margin-bottom:3rem;">
+        <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.75rem;">Customer Stories</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;letter-spacing:-0.03em;color:#F5F5F0;">What Our Customers Say</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
+        <div class="testimonial-card" data-animate>
+          <div style="display:flex;gap:0.125rem;margin-bottom:1rem;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+          </div>
+          <p style="font-size:0.9375rem;color:#F5F5F0;line-height:1.7;margin-bottom:1.25rem;">"The Lead Gen workflow paid for itself in the first week. I was spending 3 hours a day on manual prospecting — now it's fully automated. Absolute game-changer."</p>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <img src="https://placehold.co/40x40/1C1C1C/FF5500?text=MR" alt="Marcus R." style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+            <div>
+              <div style="font-size:0.875rem;font-weight:600;color:#F5F5F0;">Marcus R.</div>
+              <div style="font-size:0.75rem;color:#5C5C58;">Sales Director, TechFlow</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card" data-animate>
+          <div style="display:flex;gap:0.125rem;margin-bottom:1rem;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+          </div>
+          <p style="font-size:0.9375rem;color:#F5F5F0;line-height:1.7;margin-bottom:1.25rem;">"I set up the Email Sequence workflow in under 30 minutes. Documentation is excellent and the workflow is really clean — exactly what I needed for my SaaS onboarding."</p>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <img src="https://placehold.co/40x40/1C1C1C/00D4C8?text=SL" alt="Sofia L." style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+            <div>
+              <div style="font-size:0.875rem;font-weight:600;color:#F5F5F0;">Sofia L.</div>
+              <div style="font-size:0.75rem;color:#5C5C58;">Founder, GrowthPilot</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card" data-animate>
+          <div style="display:flex;gap:0.125rem;margin-bottom:1rem;">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="#F59E0B"><path d="M7 1L8.8 5.2L13 5.5L9.9 8.2L10.9 12.5L7 10.2L3.1 12.5L4.1 8.2L1 5.5L5.2 5.2L7 1Z"/></svg>
+          </div>
+          <p style="font-size:0.9375rem;color:#F5F5F0;line-height:1.7;margin-bottom:1.25rem;">"Bought three automations — Social Scheduler, CRM Sync, and Invoice Generator. My team saves roughly 15 hours a week combined. The support when I had a question was fast too."</p>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <img src="https://placehold.co/40x40/1C1C1C/22C55E?text=JK" alt="James K." style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+            <div>
+              <div style="font-size:0.875rem;font-weight:600;color:#F5F5F0;">James K.</div>
+              <div style="font-size:0.75rem;color:#5C5C58;">Operations Lead, NovaBridge</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" style="padding:0 1.5rem 6rem;">
+    <div style="max-width:760px;margin:0 auto;">
+      <div data-animate style="text-align:center;margin-bottom:3rem;">
+        <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.75rem;">Questions</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;letter-spacing:-0.03em;color:#F5F5F0;">Frequently Asked</h2>
+      </div>
+      <div style="border-top:1px solid #2A2A2A;" data-animate>
+        <div class="faq-item" style="border-bottom:1px solid #2A2A2A;">
+          <button class="faq-trigger">
+            <span style="font-family:'Playfair Display',serif;font-size:1.0625rem;font-weight:700;">What is n8n and do I need to set it up myself?</span>
+            <svg class="faq-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-content">
+            <p style="padding-bottom:1.25rem;font-size:0.9375rem;color:#9A9A90;line-height:1.7;">n8n is an open-source workflow automation tool — like Zapier but self-hosted and far more flexible. You can run it on your own server for free, or use n8n.cloud for a hosted option. Our documentation walks you through setup step by step.</p>
+          </div>
+        </div>
+        <div class="faq-item" style="border-bottom:1px solid #2A2A2A;">
+          <button class="faq-trigger">
+            <span style="font-family:'Playfair Display',serif;font-size:1.0625rem;font-weight:700;">Do I need to know how to code to use these automations?</span>
+            <svg class="faq-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-content">
+            <p style="padding-bottom:1.25rem;font-size:0.9375rem;color:#9A9A90;line-height:1.7;">No coding required. Each workflow comes with a JSON file you import into n8n with one click, plus plain-English setup documentation. You just fill in your API keys and credentials — everything else is pre-built.</p>
+          </div>
+        </div>
+        <div class="faq-item" style="border-bottom:1px solid #2A2A2A;">
+          <button class="faq-trigger">
+            <span style="font-family:'Playfair Display',serif;font-size:1.0625rem;font-weight:700;">What do I receive after purchasing?</span>
+            <svg class="faq-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-content">
+            <p style="padding-bottom:1.25rem;font-size:0.9375rem;color:#9A9A90;line-height:1.7;">You get an instant download containing: the n8n workflow JSON file, a setup guide PDF, a credentials checklist, and access to future updates for that workflow — all for free, forever.</p>
+          </div>
+        </div>
+        <div class="faq-item" style="border-bottom:1px solid #2A2A2A;">
+          <button class="faq-trigger">
+            <span style="font-family:'Playfair Display',serif;font-size:1.0625rem;font-weight:700;">Do you offer refunds?</span>
+            <svg class="faq-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-content">
+            <p style="padding-bottom:1.25rem;font-size:0.9375rem;color:#9A9A90;line-height:1.7;">Yes — we offer a 7-day no-questions-asked refund if the workflow doesn't work as described in your n8n environment. Just email us with your order number and we'll process it immediately.</p>
+          </div>
+        </div>
+        <div class="faq-item" style="border-bottom:1px solid #2A2A2A;">
+          <button class="faq-trigger">
+            <span style="font-family:'Playfair Display',serif;font-size:1.0625rem;font-weight:700;">Can you build a custom automation for my use case?</span>
+            <svg class="faq-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-content">
+            <p style="padding-bottom:1.25rem;font-size:0.9375rem;color:#9A9A90;line-height:1.7;">Absolutely. We take on a limited number of custom workflow projects each month. Reach out via email with your use case and we'll send you a quote within 24 hours.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA BANNER -->
+  <section style="padding:0 1.5rem 6rem;">
+    <div style="max-width:900px;margin:0 auto;position:relative;overflow:hidden;background:#141414;border:1px solid rgba(255,85,0,0.2);border-radius:1.5rem;padding:4rem 2rem;text-align:center;box-shadow:0 0 60px rgba(255,85,0,0.08),0 8px 40px rgba(0,0,0,0.6),0 1px 0 rgba(255,255,255,0.04) inset;" data-animate>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(255,85,0,0.12) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="position:relative;">
+        <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#00D4C8;margin-bottom:1rem;">Start Today</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:900;letter-spacing:-0.04em;color:#F5F5F0;margin-bottom:1rem;">Ready to Save 10+ Hours a Week?</h2>
+        <p style="font-size:1.0625rem;color:#9A9A90;line-height:1.7;max-width:520px;margin:0 auto 2rem;">Join 500+ businesses that have automated their most repetitive tasks with FlowForge workflows.</p>
+        <a href="products.html" class="btn-primary" style="font-size:1.0625rem;padding:1rem 2.5rem;">
+          Browse All Automations
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M9 4L13 8L9 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid #2A2A2A;background:#141414;padding:3.5rem 1.5rem 2rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:3rem;margin-bottom:3rem;">
+        <!-- Col 1: Brand -->
+        <div>
+          <a href="index.html" style="display:flex;align-items:center;gap:0.625rem;text-decoration:none;margin-bottom:1rem;">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><path d="M14 2L6 10L10 12L4 20L20 13L15 11L22 2L14 2Z" fill="#FF5500"/></svg>
+            <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.125rem;color:#F5F5F0;">FlowForge</span>
+          </a>
+          <p style="font-size:0.875rem;color:#5C5C58;line-height:1.65;margin-bottom:1.25rem;">Done-for-you n8n automation workflows. Buy once, automate forever.</p>
+          <div style="display:flex;gap:0.75rem;">
+            <a href="#" aria-label="Twitter/X" style="width:36px;height:36px;border-radius:8px;background:#1C1C1C;border:1px solid #2A2A2A;display:flex;align-items:center;justify-content:center;color:#9A9A90;text-decoration:none;transition:border-color 0.2s ease,color 0.2s ease;" onmouseover="this.style.borderColor='#FF5500';this.style.color='#FF5500'" onmouseout="this.style.borderColor='#2A2A2A';this.style.color='#9A9A90'">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M12.6 1h2.4L9.6 7.2 16 15H11L7.2 9.9 2.8 15H.4l5.8-6.6L0 1h5.1l3.5 4.7L12.6 1zm-.8 12.6h1.3L4.3 2.4H2.9l9 11.2z"/></svg>
+            </a>
+            <a href="https://github.com/CodexGhost" aria-label="GitHub" target="_blank" rel="noopener" style="width:36px;height:36px;border-radius:8px;background:#1C1C1C;border:1px solid #2A2A2A;display:flex;align-items:center;justify-content:center;color:#9A9A90;text-decoration:none;transition:border-color 0.2s ease,color 0.2s ease;" onmouseover="this.style.borderColor='#FF5500';this.style.color='#FF5500'" onmouseout="this.style.borderColor='#2A2A2A';this.style.color='#9A9A90'">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8c0 3.5 2.3 6.5 5.5 7.6.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1.1-2.7-1.1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.2 1.8.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8.6-.2 1.3-.3 2-.3s1.4.1 2 .3c1.5-1 2.2-.8 2.2-.8.5 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3.1-1.9 3.8-3.7 4 .3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4C13.7 14.5 16 11.5 16 8c0-4.4-3.6-8-8-8z"/></svg>
+            </a>
+          </div>
+        </div>
+        <!-- Col 2: Links -->
+        <div>
+          <h4 style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#5C5C58;margin-bottom:1rem;">Quick Links</h4>
+          <div style="display:flex;flex-direction:column;gap:0.625rem;">
+            <a href="products.html" style="font-size:0.9rem;color:#9A9A90;text-decoration:none;transition:color 0.15s ease;" onmouseover="this.style.color='#F5F5F0'" onmouseout="this.style.color='#9A9A90'">All Automations</a>
+            <a href="#how-it-works" style="font-size:0.9rem;color:#9A9A90;text-decoration:none;transition:color 0.15s ease;" onmouseover="this.style.color='#F5F5F0'" onmouseout="this.style.color='#9A9A90'">How It Works</a>
+            <a href="#faq" style="font-size:0.9rem;color:#9A9A90;text-decoration:none;transition:color 0.15s ease;" onmouseover="this.style.color='#F5F5F0'" onmouseout="this.style.color='#9A9A90'">FAQ</a>
+          </div>
+        </div>
+        <!-- Col 3: Contact -->
+        <div>
+          <h4 style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#5C5C58;margin-bottom:1rem;">Contact</h4>
+          <p style="font-size:0.875rem;color:#9A9A90;margin-bottom:0.75rem;">Questions? Custom project?</p>
+          <a href="mailto:hello@flowforge.dev" style="font-size:0.9rem;color:#FF5500;text-decoration:none;transition:opacity 0.15s ease;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">hello@flowforge.dev</a>
+          <div style="margin-top:1.25rem;display:inline-flex;align-items:center;gap:0.5rem;background:#1C1C1C;border:1px solid #2A2A2A;border-radius:0.5rem;padding:0.375rem 0.75rem;font-size:0.75rem;color:#5C5C58;">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1L7.5 4.5L11 5L8.5 7.5L9 11L6 9.5L3 11L3.5 7.5L1 5L4.5 4.5L6 1Z" fill="#FF5500" opacity="0.7"/></svg>
+            Built with n8n
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid #2A2A2A;padding-top:1.5rem;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;">
+        <span style="font-size:0.8125rem;color:#5C5C58;">© 2026 FlowForge. All rights reserved.</span>
+        <div style="display:flex;gap:1.25rem;">
+          <a href="#" style="font-size:0.8125rem;color:#5C5C58;text-decoration:none;transition:color 0.15s ease;" onmouseover="this.style.color='#9A9A90'" onmouseout="this.style.color='#5C5C58'">Privacy Policy</a>
+          <a href="#" style="font-size:0.8125rem;color:#5C5C58;text-decoration:none;transition:color 0.15s ease;" onmouseover="this.style.color='#9A9A90'" onmouseout="this.style.color='#5C5C58'">Terms of Service</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile nav toggle
+    const toggle = document.getElementById('mobile-toggle');
+    const menu = document.getElementById('mobile-menu');
+    const iconMenu = document.getElementById('icon-menu');
+    const iconClose = document.getElementById('icon-close');
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        const isOpen = menu.style.display === 'block';
+        menu.style.display = isOpen ? 'none' : 'block';
+        iconMenu.style.display = isOpen ? 'block' : 'none';
+        iconClose.style.display = isOpen ? 'none' : 'block';
+      });
+    }
+
+    // Show mobile toggle on small screens
+    function updateMobileToggle() {
+      if (toggle) toggle.style.display = window.innerWidth < 768 ? 'block' : 'none';
+    }
+    updateMobileToggle();
+    window.addEventListener('resize', updateMobileToggle);
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-trigger').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const content = btn.nextElementSibling;
+        const chevron = btn.querySelector('.faq-chevron');
+        const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
+        document.querySelectorAll('.faq-content').forEach(c => { c.style.maxHeight = ''; });
+        document.querySelectorAll('.faq-chevron').forEach(c => { c.style.transform = ''; });
+        if (!isOpen) {
+          content.style.maxHeight = content.scrollHeight + 'px';
+          chevron.style.transform = 'rotate(180deg)';
+        }
+      });
+    });
+
+    // Scroll-triggered fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

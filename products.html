@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Automations — FlowForge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: { base: '#0D0D0D', elevated: '#141414', floating: '#1C1C1C', border: '#2A2A2A' },
+            primary: { DEFAULT: '#FF5500', hover: '#FF6A20', dim: '#CC4400' },
+            accent: '#00D4C8',
+            forge: { text: '#F5F5F0', muted: '#9A9A90', faint: '#5C5C58' }
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      background:
+        radial-gradient(ellipse 70% 40% at 0% 0%, rgba(255,85,0,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 35% at 100% 100%, rgba(0,212,200,0.05) 0%, transparent 50%),
+        #0D0D0D;
+      color: #F5F5F0;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0D0D0D; }
+    ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #FF5500; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.75rem 1.75rem; background: #FF5500; color: #F5F5F0;
+      font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.9375rem;
+      border-radius: 0.5rem; border: 1px solid rgba(255,106,32,0.6);
+      box-shadow: 0 0 0 1px #FF5500, 0 4px 24px rgba(255,85,0,0.35), 0 1px 4px rgba(0,0,0,0.4);
+      transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease, background 0.15s ease;
+      text-decoration: none; cursor: pointer;
+    }
+    .btn-primary:hover { background: #FF6A20; transform: translateY(-2px); box-shadow: 0 0 0 1px #FF6A20, 0 6px 32px rgba(255,85,0,0.5), 0 1px 4px rgba(0,0,0,0.4); }
+    .btn-primary:focus-visible { outline: 2px solid #00D4C8; outline-offset: 3px; }
+    .btn-primary:active { background: #CC4400; transform: scale(0.98); }
+
+    .nav-link {
+      color: #9A9A90; text-decoration: none; font-size: 0.9rem; font-weight: 500;
+      position: relative; transition: color 0.15s ease;
+    }
+    .nav-link::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: #FF5500; transition: width 0.2s ease; }
+    .nav-link:hover { color: #F5F5F0; }
+    .nav-link:hover::after { width: 100%; }
+    .nav-link.active { color: #F5F5F0; }
+    .nav-link.active::after { width: 100%; }
+
+    .product-card {
+      background: #141414; border: 1px solid #2A2A2A; border-radius: 1rem;
+      overflow: hidden; text-decoration: none; color: inherit; display: block;
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 4px 16px -4px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4);
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255,85,0,0.3);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,85,0,0.2), 0 1px 0 rgba(255,255,255,0.05) inset;
+    }
+    .product-card:focus-visible { outline: 2px solid #00D4C8; outline-offset: 2px; }
+
+    .filter-btn {
+      padding: 0.4rem 1rem; border-radius: 999px; border: 1px solid #2A2A2A;
+      background: transparent; color: #9A9A90; font-size: 0.875rem; font-weight: 500;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .filter-btn:hover { border-color: rgba(255,85,0,0.4); color: #F5F5F0; }
+    .filter-btn.active { background: rgba(255,85,0,0.12); border-color: rgba(255,85,0,0.5); color: #FF5500; }
+    .filter-btn:focus-visible { outline: 2px solid #00D4C8; outline-offset: 2px; }
+
+    .card-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; display: none !important; }
+    .card-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .card-transition { transition: opacity 0.2s ease, transform 0.2s ease; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- NAV -->
+  <nav style="position:sticky;top:0;z-index:50;background:rgba(28,28,28,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #2A2A2A;">
+    <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <a href="index.html" style="display:flex;align-items:center;gap:0.625rem;text-decoration:none;">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 2L6 10L10 12L4 20L20 13L15 11L22 2L14 2Z" fill="#FF5500"/></svg>
+        <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.25rem;color:#F5F5F0;letter-spacing:-0.02em;">FlowForge</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:2rem;" class="hidden md:flex">
+        <a href="products.html" class="nav-link active">Products</a>
+        <a href="index.html#how-it-works" class="nav-link">How It Works</a>
+        <a href="index.html#faq" class="nav-link">FAQ</a>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <a href="products.html" class="btn-primary hidden md:inline-flex" style="padding:0.5rem 1.25rem;font-size:0.875rem;">Browse Automations</a>
+        <button id="mobile-toggle" aria-label="Toggle menu" style="display:none;background:none;border:none;color:#F5F5F0;cursor:pointer;padding:4px;" class="md:hidden">
+          <svg id="icon-menu" width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 6H19M3 11H19M3 16H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg id="icon-close" width="22" height="22" viewBox="0 0 22 22" fill="none" style="display:none;"><path d="M5 5L17 17M17 5L5 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" style="display:none;padding:1rem 1.5rem 1.5rem;border-top:1px solid #2A2A2A;">
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <a href="products.html" class="nav-link" style="font-size:1rem;">Products</a>
+        <a href="index.html#how-it-works" class="nav-link" style="font-size:1rem;">How It Works</a>
+        <a href="index.html#faq" class="nav-link" style="font-size:1rem;">FAQ</a>
+        <a href="products.html" class="btn-primary" style="justify-content:center;margin-top:0.5rem;">Browse Automations</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <section style="padding:3.5rem 1.5rem 2rem;border-bottom:1px solid #2A2A2A;background:rgba(20,20,20,0.4);">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="font-size:0.8rem;color:#5C5C58;margin-bottom:0.75rem;">
+        <a href="index.html" style="color:#5C5C58;text-decoration:none;transition:color 0.15s;" onmouseover="this.style.color='#9A9A90'" onmouseout="this.style.color='#5C5C58'">Home</a>
+        <span style="margin:0 0.5rem;">/</span>
+        <span style="color:#9A9A90;">All Automations</span>
+      </div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3rem);font-weight:900;letter-spacing:-0.04em;color:#F5F5F0;margin-bottom:0.5rem;">All Automations</h1>
+      <p style="font-size:1rem;color:#9A9A90;">8 battle-tested n8n workflows, ready to deploy.</p>
+    </div>
+  </section>
+
+  <!-- FILTER BAR -->
+  <div style="position:sticky;top:64px;z-index:40;background:rgba(28,28,28,0.92);backdrop-filter:blur(12px);border-bottom:1px solid #2A2A2A;padding:0.875rem 1.5rem;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem;">
+      <!-- Category filters -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+        <button class="filter-btn active" data-filter="all">All (8)</button>
+        <button class="filter-btn" data-filter="lead-gen">Lead Gen</button>
+        <button class="filter-btn" data-filter="email">Email</button>
+        <button class="filter-btn" data-filter="social">Social</button>
+        <button class="filter-btn" data-filter="data">Data</button>
+        <button class="filter-btn" data-filter="crm">CRM</button>
+      </div>
+      <!-- Sort -->
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <label style="font-size:0.8125rem;color:#5C5C58;" for="sort-select">Sort:</label>
+        <select id="sort-select" style="background:#1C1C1C;border:1px solid #2A2A2A;color:#F5F5F0;font-size:0.8125rem;padding:0.35rem 0.75rem;border-radius:0.4rem;font-family:'Inter',sans-serif;cursor:pointer;outline:none;appearance:none;">
+          <option value="popular">Most Popular</option>
+          <option value="newest">Newest</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT GRID -->
+  <main style="padding:2.5rem 1.5rem 5rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div id="product-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;">
+
+        <!-- 1: Lead Generation -->
+        <a href="product-lead-gen.html" class="product-card card-visible card-transition" data-category="lead-gen" data-price="49" data-order="1">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/FF5500?text=Lead+Generation" alt="Lead Generation" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(255,85,0,0.15);border:1px solid rgba(255,85,0,0.3);color:#FF5500;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Lead Gen</span>
+            <span style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#F59E0B;font-size:0.625rem;font-weight:600;padding:0.2rem 0.5rem;border-radius:999px;">★ Popular</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Lead Generation</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Lead Generation Automation</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Capture, qualify, and route leads from any source directly to your CRM — automatically, 24/7.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$49</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">
+                View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 2: Email Sequence -->
+        <a href="product-email-sequence.html" class="product-card card-visible card-transition" data-category="email" data-price="39" data-order="2">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/00D4C8?text=Email+Sequence" alt="Email Sequence" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(0,212,200,0.12);border:1px solid rgba(0,212,200,0.25);color:#00D4C8;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Email</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Email Marketing</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Email Sequence Automation</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Trigger perfectly-timed, personalized nurture email sequences based on user actions — zero manual work.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$39</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 3: Social Scheduler -->
+        <a href="product-social-scheduler.html" class="product-card card-visible card-transition" data-category="social" data-price="29" data-order="3">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/FF8C42?text=Social+Scheduler" alt="Social Scheduler" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(255,85,0,0.12);border:1px solid rgba(255,85,0,0.25);color:#FF8C42;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Social</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Social Media</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Social Media Scheduler</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Cross-post and schedule content across all platforms from a single spreadsheet. Set it, forget it.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$29</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 4: CRM Sync -->
+        <a href="product-crm-sync.html" class="product-card card-visible card-transition" data-category="crm" data-price="59" data-order="4">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/F59E0B?text=CRM+Data+Sync" alt="CRM Data Sync" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);color:#F59E0B;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">CRM</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">CRM</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">CRM Data Sync</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Keep your CRM, spreadsheets, and databases in perfect sync — automatically updated in real time.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$59</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 5: Invoice Generator -->
+        <a href="product-invoice-generator.html" class="product-card card-visible card-transition" data-category="data" data-price="34" data-order="5">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/22C55E?text=Invoice+Generator" alt="Invoice Generator" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);color:#22C55E;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Data</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Data Tools</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Invoice Generator Bot</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Auto-generate, populate, and send invoices from a spreadsheet trigger — clients get paid, you stay hands-free.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$34</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 6: Webhook Router -->
+        <a href="product-webhook-router.html" class="product-card card-visible card-transition" data-category="data" data-price="24" data-order="6">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/9B59B6?text=Webhook+Router" alt="Webhook Router" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);color:#22C55E;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Data</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Data Tools</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Webhook Routing System</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Intelligently route incoming webhooks to different workflows based on payload rules — no more brittle custom code.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$24</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 7: LinkedIn Outreach -->
+        <a href="product-linkedin-outreach.html" class="product-card card-visible card-transition" data-category="lead-gen" data-price="69" data-order="7">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/0077B5?text=LinkedIn+Outreach" alt="LinkedIn Outreach" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(255,85,0,0.15);border:1px solid rgba(255,85,0,0.3);color:#FF5500;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Lead Gen</span>
+            <span style="position:absolute;top:0.75rem;right:0.75rem;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);color:#22C55E;font-size:0.625rem;font-weight:600;padding:0.2rem 0.5rem;border-radius:999px;">New</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Lead Generation</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">LinkedIn Outreach Automation</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Automatically send personalized connection requests and follow-up messages to your ideal prospects on LinkedIn.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$69</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 8: Newsletter Builder -->
+        <a href="product-newsletter-builder.html" class="product-card card-visible card-transition" data-category="email" data-price="44" data-order="8">
+          <div style="position:relative;overflow:hidden;">
+            <img src="https://placehold.co/600x280/141414/A855F7?text=Newsletter+Builder" alt="Newsletter Builder" style="width:100%;height:180px;object-fit:cover;display:block;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%);"></div>
+            <span style="position:absolute;top:0.75rem;left:0.75rem;background:rgba(0,212,200,0.12);border:1px solid rgba(0,212,200,0.25);color:#00D4C8;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.625rem;border-radius:999px;">Email</span>
+          </div>
+          <div style="padding:1.125rem;">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:0.375rem;">Email Marketing</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-0.02em;margin-bottom:0.5rem;">Newsletter Builder</h3>
+            <p style="font-size:0.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:0.875rem;">Pull content from RSS, social, and blogs to auto-build and send a beautiful newsletter on any schedule.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#F5F5F0;">$44</span>
+              <span style="font-size:0.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:0.3rem;">View <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5H8M6 3L8 5L6 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            </div>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" style="display:none;text-align:center;padding:5rem 1rem;">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin:0 auto 1rem;"><circle cx="24" cy="24" r="22" stroke="#2A2A2A" stroke-width="2"/><path d="M16 24h16M24 16v16" stroke="#5C5C58" stroke-width="2" stroke-linecap="round"/></svg>
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:#5C5C58;margin-bottom:0.5rem;">No automations found</h3>
+        <p style="font-size:0.875rem;color:#5C5C58;">Try a different filter</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid #2A2A2A;background:#141414;padding:3.5rem 1.5rem 2rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:3rem;margin-bottom:3rem;">
+        <div>
+          <a href="index.html" style="display:flex;align-items:center;gap:0.625rem;text-decoration:none;margin-bottom:1rem;">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><path d="M14 2L6 10L10 12L4 20L20 13L15 11L22 2L14 2Z" fill="#FF5500"/></svg>
+            <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.125rem;color:#F5F5F0;">FlowForge</span>
+          </a>
+          <p style="font-size:0.875rem;color:#5C5C58;line-height:1.65;">Done-for-you n8n automation workflows. Buy once, automate forever.</p>
+        </div>
+        <div>
+          <h4 style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#5C5C58;margin-bottom:1rem;">Quick Links</h4>
+          <div style="display:flex;flex-direction:column;gap:0.625rem;">
+            <a href="products.html" style="font-size:0.9rem;color:#9A9A90;text-decoration:none;" onmouseover="this.style.color='#F5F5F0'" onmouseout="this.style.color='#9A9A90'">All Automations</a>
+            <a href="index.html#how-it-works" style="font-size:0.9rem;color:#9A9A90;text-decoration:none;" onmouseover="this.style.color='#F5F5F0'" onmouseout="this.style.color='#9A9A90'">How It Works</a>
+            <a href="index.html#faq" style="font-size:0.9rem;color:#9A9A90;text-decoration:none;" onmouseover="this.style.color='#F5F5F0'" onmouseout="this.style.color='#9A9A90'">FAQ</a>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#5C5C58;margin-bottom:1rem;">Contact</h4>
+          <a href="mailto:hello@flowforge.dev" style="font-size:0.9rem;color:#FF5500;text-decoration:none;">hello@flowforge.dev</a>
+        </div>
+      </div>
+      <div style="border-top:1px solid #2A2A2A;padding-top:1.5rem;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;">
+        <span style="font-size:0.8125rem;color:#5C5C58;">© 2026 FlowForge. All rights reserved.</span>
+        <div style="display:flex;gap:1.25rem;">
+          <a href="#" style="font-size:0.8125rem;color:#5C5C58;text-decoration:none;" onmouseover="this.style.color='#9A9A90'" onmouseout="this.style.color='#5C5C58'">Privacy Policy</a>
+          <a href="#" style="font-size:0.8125rem;color:#5C5C58;text-decoration:none;" onmouseover="this.style.color='#9A9A90'" onmouseout="this.style.color='#5C5C58'">Terms of Service</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile nav toggle
+    const toggle = document.getElementById('mobile-toggle');
+    const menu = document.getElementById('mobile-menu');
+    const iconMenu = document.getElementById('icon-menu');
+    const iconClose = document.getElementById('icon-close');
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        const isOpen = menu.style.display === 'block';
+        menu.style.display = isOpen ? 'none' : 'block';
+        iconMenu.style.display = isOpen ? 'block' : 'none';
+        iconClose.style.display = isOpen ? 'none' : 'block';
+      });
+    }
+    function updateMobileToggle() {
+      if (toggle) toggle.style.display = window.innerWidth < 768 ? 'block' : 'none';
+    }
+    updateMobileToggle();
+    window.addEventListener('resize', updateMobileToggle);
+
+    // Filter logic
+    const cards = Array.from(document.querySelectorAll('.product-card'));
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const emptyState = document.getElementById('empty-state');
+    let activeFilter = 'all';
+    let activeSort = 'popular';
+    let pendingTimeouts = [];
+
+    function applyFilter() {
+      pendingTimeouts.forEach(t => clearTimeout(t));
+      pendingTimeouts = [];
+      const visible = cards.filter(c => activeFilter === 'all' || c.dataset.category === activeFilter);
+      const hidden = cards.filter(c => activeFilter !== 'all' && c.dataset.category !== activeFilter);
+
+      // Sort visible
+      const sorted = [...visible].sort((a, b) => {
+        if (activeSort === 'price-asc') return Number(a.dataset.price) - Number(b.dataset.price);
+        if (activeSort === 'price-desc') return Number(b.dataset.price) - Number(a.dataset.price);
+        if (activeSort === 'newest') return Number(b.dataset.order) - Number(a.dataset.order);
+        return Number(a.dataset.order) - Number(b.dataset.order); // popular = original order
+      });
+
+      // Hide filtered-out cards
+      hidden.forEach(c => {
+        c.style.opacity = '0';
+        c.style.transform = 'translateY(8px)';
+        const t = setTimeout(() => { c.style.display = 'none'; }, 200);
+        pendingTimeouts.push(t);
+      });
+
+      // Show & reorder visible cards
+      const grid = document.getElementById('product-grid');
+      sorted.forEach((c, i) => {
+        c.style.display = 'block';
+        const t = setTimeout(() => {
+          c.style.opacity = '1';
+          c.style.transform = 'translateY(0)';
+        }, i * 40);
+        pendingTimeouts.push(t);
+        grid.appendChild(c);
+      });
+
+      emptyState.style.display = visible.length === 0 ? 'block' : 'none';
+    }
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        applyFilter();
+      });
+    });
+
+    document.getElementById('sort-select').addEventListener('change', (e) => {
+      activeSort = e.target.value;
+      applyFilter();
+    });
+
+    // Handle URL param ?cat=
+    const urlParams = new URLSearchParams(window.location.search);
+    const catParam = urlParams.get('cat');
+    if (catParam) {
+      const targetBtn = document.querySelector(`[data-filter="${catParam}"]`);
+      if (targetBtn) { targetBtn.click(); }
+    }
+  </script>
+</body>
+</html>
