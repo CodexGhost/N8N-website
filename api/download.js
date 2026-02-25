@@ -50,9 +50,11 @@ export default async function handler(req, res) {
   }
 
   // ── 3. Generate signed URL from Supabase Storage (valid 1 hour) ─────────────
+  // URL-encode each path segment to handle special characters in filenames (brackets, spaces, etc.)
+  const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
   try {
     const signRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/sign/${BUCKET_NAME}/${filePath}`,
+      `${SUPABASE_URL}/storage/v1/object/sign/${BUCKET_NAME}/${encodedPath}`,
       {
         method: 'POST',
         headers: {
