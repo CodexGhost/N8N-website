@@ -69,7 +69,8 @@ export default async function handler(req, res) {
     if (!signData.signedURL) throw new Error(`Supabase error: ${JSON.stringify(signData)} | path: ${encodedPath} | bucket: ${BUCKET_NAME}`);
 
     // ── 4. Redirect browser to signed file URL ─────────────────────────────────
-    res.redirect(302, `${SUPABASE_URL}${signData.signedURL}`);
+    // signedURL from Supabase is relative to /storage/v1 (e.g. /object/sign/...)
+    res.redirect(302, `${SUPABASE_URL}/storage/v1${signData.signedURL}`);
   } catch (err) {
     res.status(500).send(`Could not generate download link: ${err.message}`);
   }
