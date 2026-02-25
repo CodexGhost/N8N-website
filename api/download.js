@@ -70,7 +70,8 @@ export default async function handler(req, res) {
 
     // ── 4. Redirect browser to signed file URL ─────────────────────────────────
     // signedURL from Supabase is relative to /storage/v1 (e.g. /object/sign/...)
-    res.redirect(302, `${SUPABASE_URL}/storage/v1${signData.signedURL}`);
+    // &download= forces browser to save the file instead of displaying it inline
+    res.redirect(302, `${SUPABASE_URL}/storage/v1${signData.signedURL}&download=`);
   } catch (err) {
     res.status(500).send(`Could not generate download link: ${err.message}`);
   }
