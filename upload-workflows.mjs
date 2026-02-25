@@ -69,14 +69,11 @@ const MIME = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-async function fileExistsInStorage(storagePath) {
-  // Try to get file metadata — if it exists, skip upload
-  const { data } = await supabase.storage
-    .from(BUCKET_NAME)
-    .list(storagePath.substring(0, storagePath.lastIndexOf('/')), {
-      search: storagePath.substring(storagePath.lastIndexOf('/') + 1),
-    });
-  return data && data.length > 0 && data.some(f => f.name === storagePath.split('/').pop());
+// Extract numeric ID from folder name e.g. "[eBay] MCP Server-5579" → "5579"
+// Used as the storage folder name to avoid special character issues
+function workflowId(folderName) {
+  const m = folderName.match(/-(\d+)$/);
+  return m ? m[1] : null;
 }
 
 async function uploadFile(localPath, storagePath) {
@@ -120,9 +117,12 @@ let uploaded = 0, skipped = 0, failed = 0;
 
 for (let i = 0; i < folders.length; i++) {
   const folderName = folders[i];
-  const localFolder = join(LOCAL_WORKFLOWS_DIR, folderName);
-  const storageFolder = `${STORAGE_PREFIX}/${folderName}`;
-  const files = readdirSync(localFolder);
+  const id = workflowId(folderName);
+  if (!id) { skipped++; continue; }
+
+  const localFolder   = join(LOCAL_WORKFLOWS_DIR, folderName);
+  const storageFolder = `${STORAGE_PREFIX}/${id}`;   // use ID only — no special chars
+  const files         = readdirSync(localFolder);
 
   process.stdout.write(`  [${String(i + 1).padStart(5)}/${folders.length}] ${folderName.substring(0, 50).padEnd(50)} `);
 
@@ -142,6 +142,7 @@ for (let i = 0; i < folders.length; i++) {
     } catch (err) {
       folderFailed++;
       failed++;
+      process.stdout.write(`\n      ⚠️  ${file}: ${err.message}`);
     }
   }
 

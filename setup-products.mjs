@@ -180,8 +180,11 @@ for (const folderName of folderNames) {
     const desc      = shortDescription(readmeText);
     const longDesc  = readmeText.substring(0, 2000) || desc;
 
-    // Supabase Storage path for this workflow's JSON file (used for signed URL downloads)
-    const filePath = `${STORAGE_PREFIX}/${folderName}/${workflowFile}`;
+    // Supabase Storage path — uses numeric ID only to avoid special character issues
+    // Must match the folder name used in upload-workflows.mjs
+    const id = folderName.match(/-(\d+)$/)?.[1];
+    if (!id) { console.log('⚠️   Skipped — no ID in folder name'); skipped++; continue; }
+    const filePath = `${STORAGE_PREFIX}/${id}/${workflowFile}`;
 
     // ── Create Stripe Product ─────────────────────────────────────────────────
     const stripeProduct = await stripe.products.create({
