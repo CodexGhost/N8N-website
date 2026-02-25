@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       }
     );
     const signData = await signRes.json();
-    if (!signData.signedURL) throw new Error('No signed URL returned');
+    if (!signData.signedURL) throw new Error(`Supabase error: ${JSON.stringify(signData)} | path: ${encodedPath} | bucket: ${BUCKET_NAME}`);
 
     // ── 4. Redirect browser to signed file URL ─────────────────────────────────
     res.redirect(302, `${SUPABASE_URL}${signData.signedURL}`);
