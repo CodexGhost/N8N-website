@@ -177,8 +177,9 @@ for (const folderName of folderNames) {
     const category  = meta.categories?.[0]?.name || 'Automation';
     const nodeNames = Object.keys(nodeTypes).map(k => k.split('.').pop());
     const price     = computePrice(nodeTypes);
-    const desc      = shortDescription(readmeText);
-    const longDesc  = readmeText.substring(0, 2000) || desc;
+    const cleanReadme = readmeText.replace(/^https?:\/\/n8nworkflows\.xyz\/\S+\n?/m, '').trim();
+    const desc        = shortDescription(cleanReadme);
+    const longDesc    = cleanReadme.substring(0, 2000) || desc;
 
     // Supabase Storage path — uses numeric ID only to avoid special character issues
     // Must match the folder name used in upload-workflows.mjs

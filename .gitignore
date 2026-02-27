@@ -12,3 +12,6 @@ workflows/
 
 # Claude Code memory/config
 .claude/
+
+.vercel
+.env*.local

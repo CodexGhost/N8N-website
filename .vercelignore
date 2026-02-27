@@ -1,0 +1,7 @@
+node_modules/
+workflows/
+.env
+.env.local
+temporary screenshots/
+.claude/
+*.mjs
