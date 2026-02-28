@@ -141,7 +141,7 @@
         <span style="color:#9A9A90;">All Automations</span>
       </div>
       <h1 style="font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3rem);font-weight:900;letter-spacing:-0.04em;color:#F5F5F0;margin-bottom:0.5rem;">All Automations</h1>
-      <p style="font-size:1rem;color:#9A9A90;">8 battle-tested n8n workflows, ready to deploy.</p>
+      <p id="product-count-text" style="font-size:1rem;color:#9A9A90;">Loading workflows…</p>
     </div>
   </section>
 
@@ -411,7 +411,7 @@
       return `
         <a href="product.html?slug=${encodeURIComponent(p.slug)}"
            class="product-card card-visible card-transition"
-           data-category="${encodeURIComponent(cat.toLowerCase())}"
+           data-category="${cat.toLowerCase()}"
            data-price="${Math.round(p.price / 100)}"
            data-order="${idx + 1}"
            style="opacity:0;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease">
@@ -483,20 +483,35 @@
       });
     }
 
+    async function fetchAllProducts(cfg) {
+      const PAGE_SIZE = 1000;
+      let all = [];
+      let offset = 0;
+      while (true) {
+        const res = await fetch(
+          `${cfg.supabaseUrl}/rest/v1/products?active=eq.true&select=*&order=created_at.asc&limit=${PAGE_SIZE}&offset=${offset}`,
+          { headers: { apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${cfg.supabaseAnonKey}` } }
+        );
+        const batch = await res.json();
+        if (!Array.isArray(batch)) throw new Error('Bad response');
+        all = all.concat(batch);
+        if (batch.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
+      }
+      return all;
+    }
+
     async function loadProducts() {
       try {
         const cfg = await fetch('/api/config').then(r => r.json());
         if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) throw new Error('No Supabase config');
 
-        // Use Supabase REST API directly (no CDN needed on this page)
-        const res = await fetch(
-          `${cfg.supabaseUrl}/rest/v1/products?active=eq.true&select=*&order=created_at.asc`,
-          { headers: { apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${cfg.supabaseAnonKey}` } }
-        );
-        const products = await res.json();
-        if (!Array.isArray(products)) throw new Error('Bad response');
-
+        const products = await fetchAllProducts(cfg);
         allProducts = products;
+
+        // Update subtitle with real count
+        document.getElementById('product-count-text').textContent =
+          `${products.length.toLocaleString()} battle-tested n8n workflows, ready to deploy.`;
 
         // Render cards
         grid.innerHTML = '';
@@ -506,15 +521,16 @@
         gridLoader.style.display = 'none';
         grid.style.display = 'grid';
 
-        // Fade cards in staggered
+        // Fade cards in staggered (cap at 50 to avoid delay on large lists)
         Array.from(grid.querySelectorAll('.product-card')).forEach((c, i) => {
-          setTimeout(() => { c.style.opacity = '1'; c.style.transform = 'translateY(0)'; }, i * 60);
+          const delay = i < 50 ? i * 60 : 0;
+          setTimeout(() => { c.style.opacity = '1'; c.style.transform = 'translateY(0)'; }, delay);
         });
 
         setupFilters(products);
 
         // Update filter "All" button count
-        document.getElementById('filter-all').textContent = `All (${products.length})`;
+        document.getElementById('filter-all').textContent = `All (${products.length.toLocaleString()})`;
 
       } catch (err) {
         console.error('Failed to load products:', err);
