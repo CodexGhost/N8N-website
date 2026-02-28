@@ -30,6 +30,21 @@ async function stripeGetSession(sessionId) {
 export async function verifyPayment(sessionId, slug) {
   if (!sessionId || !slug) return { ok: false };
 
+  // Free products — check Supabase for price === 0
+  if (sessionId === 'free' && SUPABASE_URL && SUPABASE_SVC) {
+    try {
+      const rows = await sbQuery(
+        'products',
+        `slug=eq.${encodeURIComponent(slug)}&select=price`,
+        true
+      );
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].price === 0) {
+        return { ok: true };
+      }
+    } catch { /* fall through */ }
+    return { ok: false };
+  }
+
   // 1. Fast path — check purchases table (avoids a Stripe API call)
   if (SUPABASE_URL && SUPABASE_SVC) {
     try {
