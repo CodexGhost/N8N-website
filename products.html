@@ -393,10 +393,13 @@
     window.addEventListener('resize', updateMobileToggle);
 
     // ── Supabase dynamic product loading ────────────────────────────────────────
-    let allProducts = [];
+    let allProducts  = [];   // full dataset from Supabase
+    let filtered     = [];   // after category filter + sort
+    let displayCount = 0;    // how many cards currently rendered
+    const PAGE_SIZE  = 48;   // cards per "page"
+
     let activeFilter = 'all';
     let activeSort   = 'popular';
-    let pendingTimeouts = [];
 
     const grid       = document.getElementById('product-grid');
     const gridLoader = document.getElementById('grid-loading');
@@ -404,20 +407,17 @@
 
     function price(cents) { return (!cents || cents === 0) ? 'Free' : '$' + Math.round(cents / 100); }
 
-    function cardHTML(p, idx) {
+    function cardHTML(p) {
       const colors = ['#FF5500','#00D4C8','#FF8C42','#A855F7','#22C55E'];
-      const col = colors[idx % colors.length];
+      const col = colors[Math.abs(hashStr(p.slug)) % colors.length];
       const cat = (p.category || 'Automation').split('/')[0].trim();
       return `
         <a href="product.html?slug=${encodeURIComponent(p.slug)}"
            class="product-card card-visible card-transition"
-           data-category="${cat.toLowerCase()}"
-           data-price="${Math.round(p.price / 100)}"
-           data-order="${idx + 1}"
            style="opacity:0;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease">
           <div style="position:relative;overflow:hidden">
             <img src="https://placehold.co/600x280/141414/${col.slice(1)}?text=${encodeURIComponent(cat)}"
-                 alt="${p.name}" style="width:100%;height:180px;object-fit:cover;display:block">
+                 alt="${p.name}" loading="lazy" style="width:100%;height:180px;object-fit:cover;display:block">
             <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 60%)"></div>
             <span style="position:absolute;top:.75rem;left:.75rem;background:rgba(255,85,0,0.15);border:1px solid rgba(255,85,0,0.3);color:#FF5500;font-size:.6875rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.25rem .625rem;border-radius:999px">${cat}</span>
             ${p.price === 0 ? '<span style="position:absolute;top:.75rem;right:.75rem;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22C55E;font-size:.6875rem;font-weight:600;padding:.25rem .625rem;border-radius:999px">Free</span>' : ''}
@@ -425,7 +425,7 @@
           <div style="padding:1.125rem">
             <div style="font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#00D4C8;margin-bottom:.375rem">${p.category || 'Automation'}</div>
             <h3 style="font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;color:#F5F5F0;letter-spacing:-.02em;margin-bottom:.5rem">${p.name}</h3>
-            <p style="font-size:.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:.875rem">${p.description}</p>
+            <p style="font-size:.8125rem;color:#9A9A90;line-height:1.6;margin-bottom:.875rem">${p.description || ''}</p>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span style="font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:${p.price === 0 ? '#22C55E' : '#F5F5F0'}">${price(p.price)}</span>
               <span style="font-size:.8rem;font-weight:600;color:#FF5500;display:inline-flex;align-items:center;gap:.3rem">
@@ -436,38 +436,81 @@
         </a>`;
     }
 
-    function applyFilter() {
-      pendingTimeouts.forEach(t => clearTimeout(t));
-      pendingTimeouts = [];
-      const cards = Array.from(grid.querySelectorAll('.product-card:not([style*="display:none"]),.product-card:not([style*="display: none"])'));
-      const visible = cards.filter(c => activeFilter === 'all' || c.dataset.category === activeFilter.toLowerCase());
-      const hidden  = cards.filter(c => activeFilter !== 'all' && c.dataset.category !== activeFilter.toLowerCase());
+    function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return h; }
 
-      const sorted = [...visible].sort((a, b) => {
-        if (activeSort === 'price-asc')  return Number(a.dataset.price) - Number(b.dataset.price);
-        if (activeSort === 'price-desc') return Number(b.dataset.price) - Number(a.dataset.price);
-        if (activeSort === 'newest')     return Number(b.dataset.order) - Number(a.dataset.order);
-        return Number(a.dataset.order) - Number(b.dataset.order);
+    // ── Filter + sort on the data array, then render a page ───────────────────
+    function applyFilterAndRender() {
+      // 1. Filter
+      const catLower = activeFilter.toLowerCase();
+      filtered = activeFilter === 'all'
+        ? [...allProducts]
+        : allProducts.filter(p => (p.category || 'Automation').split('/')[0].trim().toLowerCase() === catLower);
+
+      // 2. Sort
+      filtered.sort((a, b) => {
+        if (activeSort === 'price-asc')  return (a.price || 0) - (b.price || 0);
+        if (activeSort === 'price-desc') return (b.price || 0) - (a.price || 0);
+        if (activeSort === 'newest')     return new Date(b.created_at) - new Date(a.created_at);
+        return 0; // default order from Supabase
       });
 
-      hidden.forEach(c => {
-        c.style.opacity = '0'; c.style.transform = 'translateY(8px)';
-        const t = setTimeout(() => { c.style.display = 'none'; }, 200);
-        pendingTimeouts.push(t);
-      });
-      sorted.forEach((c, i) => {
-        c.style.display = 'block';
-        const t = setTimeout(() => { c.style.opacity = '1'; c.style.transform = 'translateY(0)'; }, i * 40);
-        pendingTimeouts.push(t);
-        grid.appendChild(c);
-      });
+      // 3. Render first page
+      grid.innerHTML = '';
+      displayCount = 0;
+      renderNextPage();
 
-      emptyState.style.display = visible.length === 0 ? 'block' : 'none';
+      emptyState.style.display = filtered.length === 0 ? 'block' : 'none';
+      updateLoadMoreBtn();
+    }
+
+    function renderNextPage() {
+      const end = Math.min(displayCount + PAGE_SIZE, filtered.length);
+      const fragment = document.createDocumentFragment();
+      const wrapper = document.createElement('div');
+
+      for (let i = displayCount; i < end; i++) {
+        wrapper.innerHTML = cardHTML(filtered[i]);
+        const card = wrapper.firstElementChild;
+        fragment.appendChild(card);
+      }
+
+      grid.appendChild(fragment);
+
+      // Fade in new cards
+      const cards = grid.querySelectorAll('.product-card');
+      for (let i = displayCount; i < end; i++) {
+        const card = cards[i];
+        if (card) {
+          const delay = (i - displayCount) * 30;
+          setTimeout(() => { card.style.opacity = '1'; card.style.transform = 'translateY(0)'; }, delay);
+        }
+      }
+
+      displayCount = end;
+      updateLoadMoreBtn();
+    }
+
+    function updateLoadMoreBtn() {
+      let btn = document.getElementById('load-more-btn');
+      if (displayCount >= filtered.length) {
+        if (btn) btn.style.display = 'none';
+        return;
+      }
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'load-more-btn';
+        btn.className = 'btn-primary';
+        btn.style.cssText = 'display:block;margin:2.5rem auto 0;padding:.875rem 2.5rem;';
+        btn.addEventListener('click', () => renderNextPage());
+        grid.parentElement.insertBefore(btn, emptyState);
+      }
+      const remaining = filtered.length - displayCount;
+      btn.textContent = `Load More (${remaining.toLocaleString()} remaining)`;
+      btn.style.display = 'block';
     }
 
     function setupFilters(products) {
-      // Build unique category list
-      const cats = [...new Set(products.map(p => (p.category || 'Automation').split('/')[0].trim()))];
+      const cats = [...new Set(products.map(p => (p.category || 'Automation').split('/')[0].trim()))].sort();
       const dynSpan = document.getElementById('filter-btns-dynamic');
       dynSpan.innerHTML = cats.map(cat => `
         <button class="filter-btn" data-filter="${cat.toLowerCase()}">${cat}</button>
@@ -478,25 +521,25 @@
           document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           activeFilter = btn.dataset.filter;
-          applyFilter();
+          applyFilterAndRender();
         });
       });
     }
 
     async function fetchAllProducts(cfg) {
-      const PAGE_SIZE = 1000;
+      const FETCH_SIZE = 1000;
       let all = [];
       let offset = 0;
       while (true) {
         const res = await fetch(
-          `${cfg.supabaseUrl}/rest/v1/products?active=eq.true&select=*&order=created_at.asc&limit=${PAGE_SIZE}&offset=${offset}`,
+          `${cfg.supabaseUrl}/rest/v1/products?active=eq.true&select=slug,name,description,price,category,created_at&order=created_at.asc&limit=${FETCH_SIZE}&offset=${offset}`,
           { headers: { apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${cfg.supabaseAnonKey}` } }
         );
         const batch = await res.json();
         if (!Array.isArray(batch)) throw new Error('Bad response');
         all = all.concat(batch);
-        if (batch.length < PAGE_SIZE) break;
-        offset += PAGE_SIZE;
+        if (batch.length < FETCH_SIZE) break;
+        offset += FETCH_SIZE;
       }
       return all;
     }
@@ -506,31 +549,28 @@
         const cfg = await fetch('/api/config').then(r => r.json());
         if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) throw new Error('No Supabase config');
 
-        const products = await fetchAllProducts(cfg);
-        allProducts = products;
+        allProducts = await fetchAllProducts(cfg);
 
-        // Update subtitle with real count
+        // Update subtitle + filter count
         document.getElementById('product-count-text').textContent =
-          `${products.length.toLocaleString()} battle-tested n8n workflows, ready to deploy.`;
+          `${allProducts.length.toLocaleString()} battle-tested n8n workflows, ready to deploy.`;
+        document.getElementById('filter-all').textContent = `All (${allProducts.length.toLocaleString()})`;
 
-        // Render cards
-        grid.innerHTML = '';
-        products.forEach((p, i) => { grid.insertAdjacentHTML('beforeend', cardHTML(p, i)); });
+        setupFilters(allProducts);
 
         // Show grid, hide loader
         gridLoader.style.display = 'none';
         grid.style.display = 'grid';
 
-        // Fade cards in staggered (cap at 50 to avoid delay on large lists)
-        Array.from(grid.querySelectorAll('.product-card')).forEach((c, i) => {
-          const delay = i < 50 ? i * 60 : 0;
-          setTimeout(() => { c.style.opacity = '1'; c.style.transform = 'translateY(0)'; }, delay);
-        });
+        // Apply initial filter (renders first page)
+        applyFilterAndRender();
 
-        setupFilters(products);
-
-        // Update filter "All" button count
-        document.getElementById('filter-all').textContent = `All (${products.length.toLocaleString()})`;
+        // Handle URL param ?cat=
+        const catParam = new URLSearchParams(location.search).get('cat');
+        if (catParam) {
+          const targetBtn = document.querySelector(`[data-filter="${catParam}"]`);
+          if (targetBtn) targetBtn.click();
+        }
 
       } catch (err) {
         console.error('Failed to load products:', err);
@@ -542,19 +582,8 @@
 
     document.getElementById('sort-select').addEventListener('change', (e) => {
       activeSort = e.target.value;
-      applyFilter();
+      applyFilterAndRender();
     });
-
-    // Handle URL param ?cat=
-    const urlParams = new URLSearchParams(window.location.search);
-    const catParam  = urlParams.get('cat');
-    if (catParam) {
-      // Applied after products load
-      document.addEventListener('productsLoaded', () => {
-        const targetBtn = document.querySelector(`[data-filter="${catParam}"]`);
-        if (targetBtn) targetBtn.click();
-      });
-    }
   </script>
 </body>
 </html>
